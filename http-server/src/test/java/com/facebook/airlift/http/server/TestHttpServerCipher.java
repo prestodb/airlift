@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.common.io.MoreFiles.deleteRecursively;
@@ -213,7 +214,8 @@ public class TestHttpServerCipher
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 new RequestStats(),
-                new NullEventClient());
+                new NullEventClient(),
+                Optional.empty());
         serverProvider.setTheAdminServlet(new DummyServlet());
         serverProvider.setLoginService(loginServiceProvider.get());
         serverProvider.setTokenManager(new TraceTokenManager());

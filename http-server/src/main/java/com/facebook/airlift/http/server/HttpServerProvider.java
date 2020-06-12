@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.eclipse.jetty.security.LoginService;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.annotation.Nullable;
 import javax.inject.Provider;
@@ -31,6 +32,7 @@ import javax.servlet.Filter;
 import javax.servlet.Servlet;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Throwables.throwIfUnchecked;
@@ -60,6 +62,7 @@ public class HttpServerProvider
     private TraceTokenManager traceTokenManager;
     private final EventClient eventClient;
     private Authorizer authorizer;
+    private final Optional<SslContextFactory.Server> sslContextFactory;
 
     @Inject
     public HttpServerProvider(HttpServerInfo httpServerInfo,
@@ -71,7 +74,8 @@ public class HttpServerProvider
             @TheServlet Set<HttpResourceBinding> resources,
             @TheAdminServlet Set<Filter> adminFilters,
             RequestStats stats,
-            EventClient eventClient)
+            EventClient eventClient,
+            Optional<SslContextFactory.Server> sslContextFactory)
     {
         requireNonNull(httpServerInfo, "httpServerInfo is null");
         requireNonNull(nodeInfo, "nodeInfo is null");
@@ -83,6 +87,7 @@ public class HttpServerProvider
         requireNonNull(adminFilters, "adminFilters is null");
         requireNonNull(stats, "stats is null");
         requireNonNull(eventClient, "eventClient is null");
+        requireNonNull(sslContextFactory, "sslContextFactory is null");
 
         this.httpServerInfo = httpServerInfo;
         this.nodeInfo = nodeInfo;
@@ -94,6 +99,7 @@ public class HttpServerProvider
         this.adminFilters = ImmutableSet.copyOf(adminFilters);
         this.stats = stats;
         this.eventClient = eventClient;
+        this.sslContextFactory = sslContextFactory;
     }
 
     @Inject(optional = true)
@@ -158,7 +164,8 @@ public class HttpServerProvider
                     traceTokenManager,
                     stats,
                     eventClient,
-                    authorizer);
+                    authorizer,
+                    sslContextFactory);
             httpServer.start();
             return httpServer;
         }

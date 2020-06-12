@@ -22,6 +22,7 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.servlet.Filter;
 import javax.servlet.Servlet;
@@ -33,6 +34,7 @@ import static com.facebook.airlift.configuration.ConfigBinder.configBinder;
 import static com.facebook.airlift.event.client.EventBinder.eventBinder;
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
 /**
@@ -76,6 +78,7 @@ public class HttpServerModule
         newSetBinder(binder, Filter.class, TheServlet.class);
         newSetBinder(binder, Filter.class, TheAdminServlet.class);
         newSetBinder(binder, HttpResourceBinding.class, TheServlet.class);
+        newOptionalBinder(binder, SslContextFactory.Server.class);
 
         newExporter(binder).export(RequestStats.class).withGeneratedName();
 

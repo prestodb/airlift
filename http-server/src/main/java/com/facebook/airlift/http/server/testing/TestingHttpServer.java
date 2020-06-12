@@ -92,7 +92,8 @@ public class TestingHttpServer
                 new TraceTokenManager(),
                 new RequestStats(),
                 new NullEventClient(),
-                authorizer.orElse(null));
+                authorizer.orElse(null),
+                Optional.empty());
         this.httpServerInfo = httpServerInfo;
     }
 

@@ -45,6 +45,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -557,7 +558,8 @@ public class TestHttpServerProvider
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 new RequestStats(),
-                new NullEventClient());
+                new NullEventClient(),
+                Optional.empty());
         serverProvider.setTheAdminServlet(new DummyServlet());
         serverProvider.setLoginService(loginServiceProvider.get());
         serverProvider.setTokenManager(new TraceTokenManager());
