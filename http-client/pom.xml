@@ -136,6 +136,21 @@
             <artifactId>failsafe</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.facebook.drift</groupId>
+            <artifactId>drift-protocol</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.facebook.drift</groupId>
+            <artifactId>drift-codec</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.facebook.drift</groupId>
+            <artifactId>drift-transport-netty</artifactId>
+        </dependency>
+
         <!-- used by tests but also needed transitively -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

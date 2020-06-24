@@ -22,16 +22,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-import com.google.common.collect.ImmutableSet;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.MessageBodyReader;
-import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
 import java.io.EOFException;
@@ -41,30 +37,12 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-// This code is based on JacksonJsonProvider
 @Provider
 @Consumes("application/x-jackson-smile")
 @Produces("application/x-jackson-smile; qs=0.1")
 public class SmileMapper
-        implements MessageBodyReader<Object>, MessageBodyWriter<Object>
+        extends BaseMapper
 {
-    /**
-     * Looks like we need to worry about accidental
-     * data binding for types we shouldn't be handling. This is
-     * probably not a very good way to do it, but let's start by
-     * blacklisting things we are not to handle.
-     */
-    private static final ImmutableSet<Class<?>> IO_CLASSES = ImmutableSet.<Class<?>>builder()
-            .add(InputStream.class)
-            .add(java.io.Reader.class)
-            .add(OutputStream.class)
-            .add(java.io.Writer.class)
-            .add(byte[].class)
-            .add(char[].class)
-            .add(javax.ws.rs.core.StreamingOutput.class)
-            .add(Response.class)
-            .build();
-
     public static final Logger log = Logger.get(SmileMapper.class);
 
     private final ObjectMapper objectMapper;
@@ -73,32 +51,6 @@ public class SmileMapper
     public SmileMapper(ObjectMapper objectMapper)
     {
         this.objectMapper = objectMapper;
-    }
-
-    @Override
-    public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
-    {
-        return canReadOrWrite(type);
-    }
-
-    @Override
-    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
-    {
-        return canReadOrWrite(type);
-    }
-
-    private static boolean canReadOrWrite(Class<?> type)
-    {
-        if (IO_CLASSES.contains(type)) {
-            return false;
-        }
-        for (Class<?> ioClass : IO_CLASSES) {
-            if (ioClass.isAssignableFrom(type)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     @Override
@@ -134,14 +86,6 @@ public class SmileMapper
             throw new JsonMapperParsingException(type, e);
         }
         return object;
-    }
-
-    @Override
-    public long getSize(Object value, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType)
-    {
-        // In general figuring output size requires actual writing; usually not
-        // worth it to write everything twice.
-        return -1;
     }
 
     @Override
