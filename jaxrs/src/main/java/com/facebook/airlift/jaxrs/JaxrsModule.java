@@ -15,11 +15,12 @@
  */
 package com.facebook.airlift.jaxrs;
 
+import com.facebook.airlift.configuration.AbstractConfigurationAwareModule;
+import com.facebook.airlift.http.server.HttpServerConfig;
 import com.facebook.airlift.http.server.TheServlet;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Binder;
 import com.google.inject.Key;
-import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -38,7 +39,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 
 public class JaxrsModule
-        implements Module
+        extends AbstractConfigurationAwareModule
 {
     public JaxrsModule() {}
 
@@ -49,7 +50,7 @@ public class JaxrsModule
     }
 
     @Override
-    public void configure(Binder binder)
+    protected void setup(Binder binder)
     {
         binder.disableCircularProxies();
 
@@ -59,6 +60,10 @@ public class JaxrsModule
         jaxrsBinder(binder).bind(SmileMapper.class);
         jaxrsBinder(binder).bind(ParsingExceptionMapper.class);
         jaxrsBinder(binder).bind(OverrideMethodFilter.class);
+
+        if (buildConfigObject(HttpServerConfig.class).isAuthorizationEnabled()) {
+            jaxrsBinder(binder).bind(AuthorizationFilter.class);
+        }
 
         newSetBinder(binder, Object.class, JaxrsResource.class).permitDuplicates();
     }

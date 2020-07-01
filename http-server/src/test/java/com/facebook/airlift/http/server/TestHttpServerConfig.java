@@ -83,7 +83,10 @@ public class TestHttpServerConfig
                 .setHttp2InitialSessionReceiveWindowSize(new DataSize(16, MEGABYTE))
                 .setHttp2InputBufferSize(new DataSize(8, KILOBYTE))
                 .setHttp2InitialStreamReceiveWindowSize(new DataSize(16, MEGABYTE))
-                .setHttp2StreamIdleTimeout(new Duration(15, SECONDS)));
+                .setHttp2StreamIdleTimeout(new Duration(15, SECONDS))
+                .setAuthorizationEnabled(false)
+                .setDefaultAuthorizationPolicy(HttpServerConfig.AuthorizationPolicy.ALLOW)
+                .setDefaultAllowedRoles(""));
     }
 
     @Test
@@ -135,6 +138,9 @@ public class TestHttpServerConfig
                 .put("http-server.http2.stream-receive-window-size", "4MB")
                 .put("http-server.http2.input-buffer-size", "4MB")
                 .put("http-server.http2.stream-idle-timeout", "23s")
+                .put("http-server.authorization.enabled", "true")
+                .put("http-server.authorization.default-policy", "DENY")
+                .put("http-server.authorization.default-allowed-roles", "user, internal, admin")
                 .build();
 
         HttpServerConfig expected = new HttpServerConfig()
@@ -182,7 +188,10 @@ public class TestHttpServerConfig
                 .setHttp2InitialSessionReceiveWindowSize(new DataSize(4, MEGABYTE))
                 .setHttp2InitialStreamReceiveWindowSize(new DataSize(4, MEGABYTE))
                 .setHttp2InputBufferSize(new DataSize(4, MEGABYTE))
-                .setHttp2StreamIdleTimeout(new Duration(23, SECONDS));
+                .setHttp2StreamIdleTimeout(new Duration(23, SECONDS))
+                .setAuthorizationEnabled(true)
+                .setDefaultAuthorizationPolicy(HttpServerConfig.AuthorizationPolicy.DENY)
+                .setDefaultAllowedRoles("user, internal, admin");
 
         ConfigAssertions.assertFullMapping(properties, expected);
     }

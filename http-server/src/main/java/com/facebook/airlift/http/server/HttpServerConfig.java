@@ -21,6 +21,7 @@ import com.facebook.airlift.configuration.ConfigSecuritySensitive;
 import com.facebook.airlift.configuration.DefunctConfig;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
 import io.airlift.units.MaxDataSize;
@@ -31,9 +32,12 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import java.util.List;
+import java.util.Set;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static io.airlift.units.DataSize.Unit.KILOBYTE;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
+import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -58,6 +62,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 })
 public class HttpServerConfig
 {
+    public enum AuthorizationPolicy
+    {
+        ALLOW, DENY, DEFAULT_ROLES
+    }
+
     private boolean httpEnabled = true;
     private int httpPort = 8080;
     private int httpAcceptQueueSize = 8000;
@@ -116,6 +125,9 @@ public class HttpServerConfig
     private int timeoutConcurrency = 1;
 
     private boolean showStackTrace = true;
+    private boolean authorizationEnabled;
+    private AuthorizationPolicy defaultAuthorizationPolicy = AuthorizationPolicy.ALLOW;
+    private Set<String> defaultAllowedRoles = ImmutableSet.of();
 
     public boolean isHttpEnabled()
     {
@@ -691,6 +703,52 @@ public class HttpServerConfig
     public HttpServerConfig setHttp2StreamIdleTimeout(Duration http2StreamIdleTimeout)
     {
         this.http2StreamIdleTimeout = http2StreamIdleTimeout;
+        return this;
+    }
+
+    public boolean isAuthorizationEnabled()
+    {
+        return authorizationEnabled;
+    }
+
+    @Config("http-server.authorization.enabled")
+    public HttpServerConfig setAuthorizationEnabled(boolean authorizationEnabled)
+    {
+        this.authorizationEnabled = authorizationEnabled;
+        return this;
+    }
+
+    @NotNull
+    public AuthorizationPolicy getDefaultAuthorizationPolicy()
+    {
+        return defaultAuthorizationPolicy;
+    }
+
+    @Config("http-server.authorization.default-policy")
+    @ConfigDescription("The default authorization policy applies to endpoints without allowed roles specified")
+    public HttpServerConfig setDefaultAuthorizationPolicy(AuthorizationPolicy defaultAuthorizationPolicy)
+    {
+        this.defaultAuthorizationPolicy = requireNonNull(defaultAuthorizationPolicy, "defaultAuthorizationPolicy is null");
+        return this;
+    }
+
+    public Set<String> getDefaultAllowedRoles()
+    {
+        return defaultAllowedRoles;
+    }
+
+    @Config("http-server.authorization.default-allowed-roles")
+    @ConfigDescription("A comma-separated list of default roles allowed to access endpoints without explicitly specified roles")
+    public HttpServerConfig setDefaultAllowedRoles(String defaultAllowedRoles)
+    {
+        this.defaultAllowedRoles = Splitter
+                .on(",")
+                .trimResults()
+                .omitEmptyStrings()
+                .splitToList(requireNonNull(defaultAllowedRoles, "defaultAllowedRoles is null"))
+                .stream()
+                .map(role -> role.toLowerCase(ENGLISH))
+                .collect(toImmutableSet());
         return this;
     }
 }
