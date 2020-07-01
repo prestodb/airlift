@@ -88,6 +88,5 @@ public class TestingHttpServerModule
     List<Authenticator> getAuthenticatorList(Set<Authenticator> authenticators)
     {
         return ImmutableList.copyOf(authenticators);
-        newOptionalBinder(binder, Authorizer.class);
     }
 }
