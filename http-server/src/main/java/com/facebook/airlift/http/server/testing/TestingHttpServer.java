@@ -16,6 +16,7 @@
 package com.facebook.airlift.http.server.testing;
 
 import com.facebook.airlift.event.client.NullEventClient;
+import com.facebook.airlift.http.server.Authorizer;
 import com.facebook.airlift.http.server.HttpServer;
 import com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
 import com.facebook.airlift.http.server.HttpServerConfig;
@@ -25,14 +26,15 @@ import com.facebook.airlift.http.server.TheServlet;
 import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 
-import javax.inject.Inject;
 import javax.servlet.Filter;
 import javax.servlet.Servlet;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class TestingHttpServer
@@ -46,7 +48,8 @@ public class TestingHttpServer
             HttpServerConfig config,
             @TheServlet Servlet servlet,
             @TheServlet Map<String, Servlet> servlets,
-            @TheServlet Map<String, String> initParameters)
+            @TheServlet Map<String, String> initParameters,
+            Optional<Authorizer> authorizer)
             throws IOException
     {
         this(httpServerInfo,
@@ -56,7 +59,8 @@ public class TestingHttpServer
                 servlets,
                 initParameters,
                 ImmutableSet.of(),
-                ImmutableSet.of());
+                ImmutableSet.of(),
+                authorizer);
     }
 
     @Inject
@@ -68,7 +72,8 @@ public class TestingHttpServer
             @TheServlet Map<String, Servlet> servlets,
             @TheServlet Map<String, String> initParameters,
             @TheServlet Set<Filter> filters,
-            @TheServlet Set<HttpResourceBinding> resources)
+            @TheServlet Set<HttpResourceBinding> resources,
+            Optional<Authorizer> authorizer)
             throws IOException
     {
         super(httpServerInfo,
@@ -86,7 +91,8 @@ public class TestingHttpServer
                 null,
                 new TraceTokenManager(),
                 new RequestStats(),
-                new NullEventClient());
+                new NullEventClient(),
+                authorizer.orElse(null));
         this.httpServerInfo = httpServerInfo;
     }
 

@@ -55,6 +55,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.facebook.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
@@ -274,7 +275,7 @@ public class TestTestingHttpServer
         NodeInfo nodeInfo = new NodeInfo("test");
         HttpServerConfig config = new HttpServerConfig().setHttpPort(0);
         HttpServerInfo httpServerInfo = new HttpServerInfo(config, nodeInfo);
-        return new TestingHttpServer(httpServerInfo, nodeInfo, config, servlet, ImmutableMap.of(), params);
+        return new TestingHttpServer(httpServerInfo, nodeInfo, config, servlet, ImmutableMap.of(), params, Optional.empty());
     }
 
     private static TestingHttpServer createTestingHttpServerWithFilter(DummyServlet servlet, Map<String, String> params, DummyFilter filter)
@@ -283,7 +284,7 @@ public class TestTestingHttpServer
         NodeInfo nodeInfo = new NodeInfo("test");
         HttpServerConfig config = new HttpServerConfig().setHttpPort(0);
         HttpServerInfo httpServerInfo = new HttpServerInfo(config, nodeInfo);
-        return new TestingHttpServer(httpServerInfo, nodeInfo, config, servlet, ImmutableMap.of(), params, ImmutableSet.of(filter), ImmutableSet.of());
+        return new TestingHttpServer(httpServerInfo, nodeInfo, config, servlet, ImmutableMap.of(), params, ImmutableSet.of(filter), ImmutableSet.of(), Optional.empty());
     }
 
     static class DummyServlet

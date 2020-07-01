@@ -59,6 +59,7 @@ public class HttpServerProvider
     private final Set<Filter> adminFilters;
     private TraceTokenManager traceTokenManager;
     private final EventClient eventClient;
+    private Authorizer authorizer;
 
     @Inject
     public HttpServerProvider(HttpServerInfo httpServerInfo,
@@ -131,6 +132,12 @@ public class HttpServerProvider
         this.traceTokenManager = tokenManager;
     }
 
+    @Inject(optional = true)
+    public void setAuthorizer(@Nullable Authorizer authorizer)
+    {
+        this.authorizer = authorizer;
+    }
+
     @Override
     public HttpServer get()
     {
@@ -150,7 +157,8 @@ public class HttpServerProvider
                     loginService,
                     traceTokenManager,
                     stats,
-                    eventClient);
+                    eventClient,
+                    authorizer);
             httpServer.start();
             return httpServer;
         }

@@ -83,6 +83,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.facebook.airlift.http.utils.jetty.ConcurrentScheduler.createConcurrentScheduler;
 import static com.google.common.base.MoreObjects.firstNonNull;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.toIntExact;
 import static java.lang.String.format;
@@ -118,7 +119,8 @@ public class HttpServer
             LoginService loginService,
             TraceTokenManager tokenManager,
             RequestStats stats,
-            EventClient eventClient)
+            EventClient eventClient,
+            Authorizer authorizer)
             throws IOException
     {
         requireNonNull(httpServerInfo, "httpServerInfo is null");
@@ -368,7 +370,7 @@ public class HttpServer
             handlers.addHandler(gzipHandler);
         }
 
-        handlers.addHandler(createServletContext(defaultServlet, servlets, parameters, filters, tokenManager, loginService, "http", "https"));
+        handlers.addHandler(createServletContext(config, defaultServlet, servlets, parameters, filters, tokenManager, loginService, authorizer, "http", "https"));
 
         if (config.isRequestStatsEnabled()) {
             RequestLogHandler statsRecorder = new RequestLogHandler();
@@ -382,7 +384,7 @@ public class HttpServer
 
         HandlerList rootHandlers = new HandlerList();
         if (theAdminServlet != null && config.isAdminEnabled()) {
-            rootHandlers.addHandler(createServletContext(theAdminServlet, ImmutableMap.of(), adminParameters, adminFilters, tokenManager, loginService, "admin"));
+            rootHandlers.addHandler(createServletContext(config, theAdminServlet, ImmutableMap.of(), adminParameters, adminFilters, tokenManager, loginService, authorizer, "admin"));
         }
         rootHandlers.addHandler(statsHandler);
         server.setHandler(rootHandlers);
@@ -394,12 +396,14 @@ public class HttpServer
     }
 
     private static ServletContextHandler createServletContext(
+            HttpServerConfig config,
             Servlet defaultServlet,
             Map<String, Servlet> servlets,
             Map<String, String> parameters,
             Set<Filter> filters,
             TraceTokenManager tokenManager,
             LoginService loginService,
+            Authorizer authorizer,
             String... connectorNames)
     {
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
@@ -427,9 +431,22 @@ public class HttpServer
         context.addServlet(servletHolder, "/*");
 
         for (Map.Entry<String, Servlet> servlet : servlets.entrySet()) {
-            ServletHolder holder = new ServletHolder(servlet.getValue());
-            holder.setInitParameters(ImmutableMap.copyOf(parameters));
-            context.addServlet(holder, servlet.getKey());
+            if (config.isAuthorizationEnabled()) {
+                checkArgument(authorizer != null, "when authorization is enabled, authorizer implementation must be provided");
+                AuthorizationEnabledServlet authorizationEnabledServlet = new AuthorizationEnabledServlet(
+                        servlet.getValue(),
+                        authorizer,
+                        config.getDefaultAuthorizationPolicy(),
+                        config.getDefaultAllowedRoles());
+                ServletHolder holder = new ServletHolder(authorizationEnabledServlet);
+                holder.setInitParameters(ImmutableMap.copyOf(parameters));
+                context.addServlet(holder, servlet.getKey());
+            }
+            else {
+                ServletHolder holder = new ServletHolder(servlet.getValue());
+                holder.setInitParameters(ImmutableMap.copyOf(parameters));
+                context.addServlet(holder, servlet.getKey());
+            }
         }
 
         // Starting with Jetty 9 there is no way to specify connectors directly, but

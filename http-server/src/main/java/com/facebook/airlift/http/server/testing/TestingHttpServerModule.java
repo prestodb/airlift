@@ -18,6 +18,7 @@ package com.facebook.airlift.http.server.testing;
 import com.facebook.airlift.discovery.client.AnnouncementHttpServerInfo;
 import com.facebook.airlift.http.server.AuthenticationFilter;
 import com.facebook.airlift.http.server.Authenticator;
+import com.facebook.airlift.http.server.Authorizer;
 import com.facebook.airlift.http.server.HttpServer;
 import com.facebook.airlift.http.server.HttpServerConfig;
 import com.facebook.airlift.http.server.HttpServerInfo;
@@ -40,6 +41,7 @@ import static com.facebook.airlift.configuration.ConfigBinder.configBinder;
 import static com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 
 public class TestingHttpServerModule
         implements Module
@@ -79,11 +81,13 @@ public class TestingHttpServerModule
         newSetBinder(binder, Filter.class, TheServlet.class).addBinding()
                 .to(AuthenticationFilter.class).in(Scopes.SINGLETON);
         newSetBinder(binder, Authenticator.class);
+        newOptionalBinder(binder, Authorizer.class);
     }
 
     @Provides
     List<Authenticator> getAuthenticatorList(Set<Authenticator> authenticators)
     {
         return ImmutableList.copyOf(authenticators);
+        newOptionalBinder(binder, Authorizer.class);
     }
 }
