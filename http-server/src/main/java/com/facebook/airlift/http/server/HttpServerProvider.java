@@ -30,6 +30,7 @@ import javax.management.MBeanServer;
 import javax.servlet.Filter;
 import javax.servlet.Servlet;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,6 +60,7 @@ public class HttpServerProvider
     private final Set<Filter> adminFilters;
     private TraceTokenManager traceTokenManager;
     private final EventClient eventClient;
+    private List<Authenticator> authenticators;
 
     @Inject
     public HttpServerProvider(HttpServerInfo httpServerInfo,
@@ -70,7 +72,8 @@ public class HttpServerProvider
             @TheServlet Set<HttpResourceBinding> resources,
             @TheAdminServlet Set<Filter> adminFilters,
             RequestStats stats,
-            EventClient eventClient)
+            EventClient eventClient,
+            List<Authenticator> authenticators)
     {
         requireNonNull(httpServerInfo, "httpServerInfo is null");
         requireNonNull(nodeInfo, "nodeInfo is null");
@@ -82,6 +85,7 @@ public class HttpServerProvider
         requireNonNull(adminFilters, "adminFilters is null");
         requireNonNull(stats, "stats is null");
         requireNonNull(eventClient, "eventClient is null");
+        requireNonNull(authenticators, "authenticators is null");
 
         this.httpServerInfo = httpServerInfo;
         this.nodeInfo = nodeInfo;
@@ -93,6 +97,7 @@ public class HttpServerProvider
         this.adminFilters = ImmutableSet.copyOf(adminFilters);
         this.stats = stats;
         this.eventClient = eventClient;
+        this.authenticators = authenticators;
     }
 
     @Inject(optional = true)
@@ -150,7 +155,8 @@ public class HttpServerProvider
                     loginService,
                     traceTokenManager,
                     stats,
-                    eventClient);
+                    eventClient,
+                    authenticators);
             httpServer.start();
             return httpServer;
         }

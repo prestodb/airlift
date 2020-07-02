@@ -16,18 +16,24 @@
 package com.facebook.airlift.http.server.testing;
 
 import com.facebook.airlift.discovery.client.AnnouncementHttpServerInfo;
+import com.facebook.airlift.http.server.Authenticator;
 import com.facebook.airlift.http.server.HttpServer;
 import com.facebook.airlift.http.server.HttpServerConfig;
 import com.facebook.airlift.http.server.HttpServerInfo;
 import com.facebook.airlift.http.server.LocalAnnouncementHttpServerInfo;
 import com.facebook.airlift.http.server.TheServlet;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
 import javax.servlet.Filter;
 import javax.servlet.Servlet;
+
+import java.util.List;
+import java.util.Set;
 
 import static com.facebook.airlift.configuration.ConfigBinder.configBinder;
 import static com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
@@ -69,5 +75,12 @@ public class TestingHttpServerModule
         newSetBinder(binder, Filter.class, TheServlet.class);
         newSetBinder(binder, HttpResourceBinding.class, TheServlet.class);
         binder.bind(AnnouncementHttpServerInfo.class).to(LocalAnnouncementHttpServerInfo.class);
+        newSetBinder(binder, Authenticator.class);
+    }
+
+    @Provides
+    List<Authenticator> getAuthenticatorList(Set<Authenticator> authenticators)
+    {
+        return ImmutableList.copyOf(authenticators);
     }
 }

@@ -16,6 +16,7 @@ package com.facebook.airlift.http.server;
 import com.facebook.airlift.event.client.NullEventClient;
 import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
@@ -213,7 +214,8 @@ public class TestHttpServerCipher
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 new RequestStats(),
-                new NullEventClient());
+                new NullEventClient(),
+                ImmutableList.of());
         serverProvider.setTheAdminServlet(new DummyServlet());
         serverProvider.setLoginService(loginServiceProvider.get());
         serverProvider.setTokenManager(new TraceTokenManager());

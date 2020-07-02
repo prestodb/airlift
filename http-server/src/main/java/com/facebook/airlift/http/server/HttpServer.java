@@ -118,7 +118,8 @@ public class HttpServer
             LoginService loginService,
             TraceTokenManager tokenManager,
             RequestStats stats,
-            EventClient eventClient)
+            EventClient eventClient,
+            List<Authenticator> authenticators)
             throws IOException
     {
         requireNonNull(httpServerInfo, "httpServerInfo is null");
@@ -368,7 +369,7 @@ public class HttpServer
             handlers.addHandler(gzipHandler);
         }
 
-        handlers.addHandler(createServletContext(defaultServlet, servlets, parameters, filters, tokenManager, loginService, "http", "https"));
+        handlers.addHandler(createServletContext(config, defaultServlet, servlets, parameters, filters, tokenManager, loginService, authenticators, "http", "https"));
 
         if (config.isRequestStatsEnabled()) {
             RequestLogHandler statsRecorder = new RequestLogHandler();
@@ -382,7 +383,7 @@ public class HttpServer
 
         HandlerList rootHandlers = new HandlerList();
         if (theAdminServlet != null && config.isAdminEnabled()) {
-            rootHandlers.addHandler(createServletContext(theAdminServlet, ImmutableMap.of(), adminParameters, adminFilters, tokenManager, loginService, "admin"));
+            rootHandlers.addHandler(createServletContext(config, theAdminServlet, ImmutableMap.of(), adminParameters, adminFilters, tokenManager, loginService, authenticators, "admin"));
         }
         rootHandlers.addHandler(statsHandler);
         server.setHandler(rootHandlers);
@@ -394,12 +395,14 @@ public class HttpServer
     }
 
     private static ServletContextHandler createServletContext(
+            HttpServerConfig config,
             Servlet defaultServlet,
             Map<String, Servlet> servlets,
             Map<String, String> parameters,
             Set<Filter> filters,
             TraceTokenManager tokenManager,
             LoginService loginService,
+            List<Authenticator> authenticators,
             String... connectorNames)
     {
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
@@ -413,6 +416,10 @@ public class HttpServer
         if (loginService != null) {
             SecurityHandler securityHandler = createSecurityHandler(loginService);
             context.setSecurityHandler(securityHandler);
+        }
+        // -- authentication filter
+        if (config.isAuthenticationEnabled()) {
+            context.addFilter(new FilterHolder(new AuthenticationFilter(authenticators)), "/*", null);
         }
         // -- user provided filters
         for (Filter filter : filters) {

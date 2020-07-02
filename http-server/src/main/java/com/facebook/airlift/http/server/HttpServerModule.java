@@ -17,12 +17,17 @@ package com.facebook.airlift.http.server;
 
 import com.facebook.airlift.discovery.client.AnnouncementHttpServerInfo;
 import com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
 import com.google.inject.Module;
+import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
 import javax.servlet.Filter;
 import javax.servlet.Servlet;
+
+import java.util.List;
+import java.util.Set;
 
 import static com.facebook.airlift.configuration.ConfigBinder.configBinder;
 import static com.facebook.airlift.event.client.EventBinder.eventBinder;
@@ -79,5 +84,12 @@ public class HttpServerModule
         eventBinder(binder).bindEventClient(HttpRequestEvent.class);
 
         binder.bind(AnnouncementHttpServerInfo.class).to(LocalAnnouncementHttpServerInfo.class).in(Scopes.SINGLETON);
+        newSetBinder(binder, Authenticator.class);
+    }
+
+    @Provides
+    List<Authenticator> getAuthenticatorList(Set<Authenticator> authenticators)
+    {
+        return ImmutableList.copyOf(authenticators);
     }
 }

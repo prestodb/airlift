@@ -116,6 +116,7 @@ public class HttpServerConfig
     private int timeoutConcurrency = 1;
 
     private boolean showStackTrace = true;
+    private boolean authenticationEnabled = true;
 
     public boolean isHttpEnabled()
     {
@@ -691,6 +692,18 @@ public class HttpServerConfig
     public HttpServerConfig setHttp2StreamIdleTimeout(Duration http2StreamIdleTimeout)
     {
         this.http2StreamIdleTimeout = http2StreamIdleTimeout;
+        return this;
+    }
+
+    public boolean isAuthenticationEnabled()
+    {
+        return authenticationEnabled;
+    }
+
+    @Config("http-server.authentication.enabled")
+    public HttpServerConfig setAuthenticationEnabled(boolean authenticationEnabled)
+    {
+        this.authenticationEnabled = authenticationEnabled;
         return this;
     }
 }
