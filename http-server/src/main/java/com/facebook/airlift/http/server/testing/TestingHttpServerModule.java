@@ -16,6 +16,7 @@
 package com.facebook.airlift.http.server.testing;
 
 import com.facebook.airlift.discovery.client.AnnouncementHttpServerInfo;
+import com.facebook.airlift.http.server.AuthenticationFilter;
 import com.facebook.airlift.http.server.Authenticator;
 import com.facebook.airlift.http.server.HttpServer;
 import com.facebook.airlift.http.server.HttpServerConfig;
@@ -75,6 +76,8 @@ public class TestingHttpServerModule
         newSetBinder(binder, Filter.class, TheServlet.class);
         newSetBinder(binder, HttpResourceBinding.class, TheServlet.class);
         binder.bind(AnnouncementHttpServerInfo.class).to(LocalAnnouncementHttpServerInfo.class);
+        newSetBinder(binder, Filter.class, TheServlet.class).addBinding()
+                .to(AuthenticationFilter.class).in(Scopes.SINGLETON);
         newSetBinder(binder, Authenticator.class);
     }
 

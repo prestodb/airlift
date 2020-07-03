@@ -30,7 +30,6 @@ import com.facebook.airlift.http.server.TheServlet;
 import com.facebook.airlift.log.Logging;
 import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.node.testing.TestingNodeModule;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.HttpHeaders;
@@ -275,7 +274,7 @@ public class TestTestingHttpServer
         NodeInfo nodeInfo = new NodeInfo("test");
         HttpServerConfig config = new HttpServerConfig().setHttpPort(0);
         HttpServerInfo httpServerInfo = new HttpServerInfo(config, nodeInfo);
-        return new TestingHttpServer(httpServerInfo, nodeInfo, config, servlet, ImmutableMap.of(), params, ImmutableList.of());
+        return new TestingHttpServer(httpServerInfo, nodeInfo, config, servlet, ImmutableMap.of(), params);
     }
 
     private static TestingHttpServer createTestingHttpServerWithFilter(DummyServlet servlet, Map<String, String> params, DummyFilter filter)
@@ -284,7 +283,7 @@ public class TestTestingHttpServer
         NodeInfo nodeInfo = new NodeInfo("test");
         HttpServerConfig config = new HttpServerConfig().setHttpPort(0);
         HttpServerInfo httpServerInfo = new HttpServerInfo(config, nodeInfo);
-        return new TestingHttpServer(httpServerInfo, nodeInfo, config, servlet, ImmutableMap.of(), params, ImmutableSet.of(filter), ImmutableSet.of(), ImmutableList.of());
+        return new TestingHttpServer(httpServerInfo, nodeInfo, config, servlet, ImmutableMap.of(), params, ImmutableSet.of(filter), ImmutableSet.of());
     }
 
     static class DummyServlet

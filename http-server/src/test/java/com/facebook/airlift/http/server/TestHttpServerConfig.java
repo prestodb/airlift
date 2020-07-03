@@ -83,8 +83,7 @@ public class TestHttpServerConfig
                 .setHttp2InitialSessionReceiveWindowSize(new DataSize(16, MEGABYTE))
                 .setHttp2InputBufferSize(new DataSize(8, KILOBYTE))
                 .setHttp2InitialStreamReceiveWindowSize(new DataSize(16, MEGABYTE))
-                .setHttp2StreamIdleTimeout(new Duration(15, SECONDS))
-                .setAuthenticationEnabled(true));
+                .setHttp2StreamIdleTimeout(new Duration(15, SECONDS)));
     }
 
     @Test
@@ -136,7 +135,6 @@ public class TestHttpServerConfig
                 .put("http-server.http2.stream-receive-window-size", "4MB")
                 .put("http-server.http2.input-buffer-size", "4MB")
                 .put("http-server.http2.stream-idle-timeout", "23s")
-                .put("http-server.authentication.enabled", "false")
                 .build();
 
         HttpServerConfig expected = new HttpServerConfig()
@@ -184,8 +182,7 @@ public class TestHttpServerConfig
                 .setHttp2InitialSessionReceiveWindowSize(new DataSize(4, MEGABYTE))
                 .setHttp2InitialStreamReceiveWindowSize(new DataSize(4, MEGABYTE))
                 .setHttp2InputBufferSize(new DataSize(4, MEGABYTE))
-                .setHttp2StreamIdleTimeout(new Duration(23, SECONDS))
-                .setAuthenticationEnabled(false);
+                .setHttp2StreamIdleTimeout(new Duration(23, SECONDS));
 
         ConfigAssertions.assertFullMapping(properties, expected);
     }

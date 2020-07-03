@@ -84,6 +84,8 @@ public class HttpServerModule
         eventBinder(binder).bindEventClient(HttpRequestEvent.class);
 
         binder.bind(AnnouncementHttpServerInfo.class).to(LocalAnnouncementHttpServerInfo.class).in(Scopes.SINGLETON);
+        newSetBinder(binder, Filter.class, TheServlet.class).addBinding()
+                .to(AuthenticationFilter.class).in(Scopes.SINGLETON);
         newSetBinder(binder, Authenticator.class);
     }
 

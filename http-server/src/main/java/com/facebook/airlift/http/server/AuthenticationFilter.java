@@ -16,6 +16,7 @@ package com.facebook.airlift.http.server;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
+import javax.inject.Inject;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -44,6 +45,7 @@ public class AuthenticationFilter
 {
     private final List<Authenticator> authenticators;
 
+    @Inject
     public AuthenticationFilter(List<Authenticator> authenticators)
     {
         this.authenticators = ImmutableList.copyOf(requireNonNull(authenticators, "authenticators is null"));

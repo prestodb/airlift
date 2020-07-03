@@ -16,7 +16,6 @@
 package com.facebook.airlift.http.server.testing;
 
 import com.facebook.airlift.event.client.NullEventClient;
-import com.facebook.airlift.http.server.Authenticator;
 import com.facebook.airlift.http.server.HttpServer;
 import com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
 import com.facebook.airlift.http.server.HttpServerConfig;
@@ -33,7 +32,6 @@ import javax.servlet.Servlet;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,8 +46,7 @@ public class TestingHttpServer
             HttpServerConfig config,
             @TheServlet Servlet servlet,
             @TheServlet Map<String, Servlet> servlets,
-            @TheServlet Map<String, String> initParameters,
-            List<Authenticator> authenticators)
+            @TheServlet Map<String, String> initParameters)
             throws IOException
     {
         this(httpServerInfo,
@@ -59,8 +56,7 @@ public class TestingHttpServer
                 servlets,
                 initParameters,
                 ImmutableSet.of(),
-                ImmutableSet.of(),
-                authenticators);
+                ImmutableSet.of());
     }
 
     @Inject
@@ -72,8 +68,7 @@ public class TestingHttpServer
             @TheServlet Map<String, Servlet> servlets,
             @TheServlet Map<String, String> initParameters,
             @TheServlet Set<Filter> filters,
-            @TheServlet Set<HttpResourceBinding> resources,
-            List<Authenticator> authenticators)
+            @TheServlet Set<HttpResourceBinding> resources)
             throws IOException
     {
         super(httpServerInfo,
@@ -91,8 +86,7 @@ public class TestingHttpServer
                 null,
                 new TraceTokenManager(),
                 new RequestStats(),
-                new NullEventClient(),
-                authenticators);
+                new NullEventClient());
         this.httpServerInfo = httpServerInfo;
     }
 
