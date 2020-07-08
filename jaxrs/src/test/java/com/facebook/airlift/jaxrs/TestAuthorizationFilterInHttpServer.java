@@ -223,6 +223,23 @@ public class TestAuthorizationFilterInHttpServer
         assertEquals(responseAdmin.getStatusCode(), Response.Status.FORBIDDEN.getStatusCode());
     }
 
+    @Test
+    public void testExternalRoles()
+            throws Exception
+    {
+        Map<String, String> serverProperties = ImmutableMap.of("http-server.authorization.enabled", "true");
+        TestingHttpServer server = createServer(serverProperties);
+        server.start();
+        StatusResponse responseUnauthorized = sendRequest(server, "ext");
+        StatusResponse responseUser = sendRequestWithRole(server, "ext", "user");
+        StatusResponse responseAdmin = sendRequestWithRole(server, "ext", "admin");
+        server.stop();
+
+        assertEquals(responseUnauthorized.getStatusCode(), Response.Status.FORBIDDEN.getStatusCode());
+        assertEquals(responseUser.getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(responseAdmin.getStatusCode(), Response.Status.FORBIDDEN.getStatusCode());
+    }
+
     private StatusResponse sendRequest(TestingHttpServer server, String resource)
     {
         URI uri = uriBuilderFrom(server.getBaseUrl()).appendPath(resource).build();
@@ -325,6 +342,17 @@ public class TestAuthorizationFilterInHttpServer
         }
     }
 
+    @Path("/ext")
+    @RolesAllowed("fetcher")
+    public static class MockExternalResource
+    {
+        @GET
+        public boolean extResource()
+        {
+            return true;
+        }
+    }
+
     private static TestingHttpServer createServer(Map<String, String> serverProperties)
     {
         List<Module> modules = ImmutableList.<Module>builder()
@@ -335,6 +363,8 @@ public class TestAuthorizationFilterInHttpServer
                 .add(binder -> {
                     jaxrsBinder(binder).bind(MockResource.class);
                     jaxrsBinder(binder).bind(MockClassLevelResource.class);
+                    jaxrsBinder(binder).bind(MockExternalResource.class).withRolesMapping(
+                            ImmutableMap.of("fetcher", "user"));
                 })
                 .add(installModuleIf(
                         HttpServerConfig.class,

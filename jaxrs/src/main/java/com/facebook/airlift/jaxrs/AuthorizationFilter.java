@@ -31,10 +31,12 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 
 import java.security.Principal;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import static com.facebook.airlift.http.server.HttpServerConfig.AuthorizationPolicy;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -45,28 +47,35 @@ public class AuthorizationFilter
     private final Authorizer authorizer;
     private final AuthorizationPolicy authorizationPolicy;
     private final Set<String> defaultAllowedRoles;
+    private final Map<Class<?>, Map<String, String>> roleMaps;
 
     @Context
     private ResourceInfo resourceInfo;
 
     @Inject
-    public AuthorizationFilter(Authorizer authorizer, HttpServerConfig httpServerConfig)
+    public AuthorizationFilter(
+            Authorizer authorizer,
+            HttpServerConfig httpServerConfig,
+            @RoleMapping Map<Class<?>, Map<String, String>> roleMaps)
     {
         this(
                 authorizer,
                 httpServerConfig.getDefaultAuthorizationPolicy(),
-                httpServerConfig.getDefaultAllowedRoles());
+                httpServerConfig.getDefaultAllowedRoles(),
+                roleMaps);
     }
 
     @VisibleForTesting
     public AuthorizationFilter(
             Authorizer authorizer,
             AuthorizationPolicy authorizationPolicy,
-            Set<String> defaultAllowedRoles)
+            Set<String> defaultAllowedRoles,
+            Map<Class<?>, Map<String, String>> roleMaps)
     {
         this.authorizer = requireNonNull(authorizer, "authorizer is null");
         this.authorizationPolicy = requireNonNull(authorizationPolicy, "authorizationPolicy is null");
         this.defaultAllowedRoles = requireNonNull(defaultAllowedRoles, "defaultAllowedRoles is null");
+        this.roleMaps = requireNonNull(roleMaps, "roleMaps is null");
     }
 
     @Override
@@ -96,6 +105,12 @@ public class AuthorizationFilter
                     break;
                 default:
             }
+        }
+        else if (roleMaps.containsKey(resourceInfo.getResourceClass())) {
+            allowedRoles = Optional.of(allowedRoles.get()
+                    .stream()
+                    .map(role -> roleMaps.get(resourceInfo.getResourceClass()).getOrDefault(role, role))
+                    .collect(toImmutableSet()));
         }
 
         AuthorizationResult result = authorizer.authorize(principal, allowedRoles.get());
