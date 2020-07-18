@@ -5,5 +5,5 @@ import java.util.Set;
 
 public interface Authorizer
 {
-    AuthorizationResult authorize(Principal principal, Set<String> allowedRoles);
+    AuthorizationResult authorize(Principal principal, Set<String> allowedRoles, String requestUrl);
 }

@@ -98,7 +98,10 @@ public class AuthorizationEnabledServlet
             }
         }
 
-        AuthorizationResult result = authorizer.authorize(principal, allowedRoles.get());
+        AuthorizationResult result = authorizer.authorize(
+                principal,
+                allowedRoles.get(),
+                request.getRequestURL().toString());
         if (!result.isAllowed()) {
             abortWithMessage(request, response, format("Principal %s is not allowed to access the resource. Reason: %s",
                     principal.getName(),

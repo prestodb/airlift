@@ -185,7 +185,7 @@ public class TestAuthorizationEnabledServletInHttpServer
             implements Authorizer
     {
         @Override
-        public AuthorizationResult authorize(Principal principal, Set<String> allowedRoles)
+        public AuthorizationResult authorize(Principal principal, Set<String> allowedRoles, String requestUrl)
         {
             for (String role : allowedRoles) {
                 if (role.equals(principal.getName())) {

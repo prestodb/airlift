@@ -98,7 +98,10 @@ public class AuthorizationFilter
             }
         }
 
-        AuthorizationResult result = authorizer.authorize(principal, allowedRoles.get());
+        AuthorizationResult result = authorizer.authorize(
+                principal,
+                allowedRoles.get(),
+                request.getUriInfo().getRequestUri().toString());
         if (!result.isAllowed()) {
             request.abortWith(Response.status(Response.Status.FORBIDDEN)
                     .entity(format("Principal %s is not allowed to access the resource. Reason: %s",

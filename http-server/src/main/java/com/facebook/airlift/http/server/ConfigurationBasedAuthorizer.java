@@ -62,7 +62,7 @@ public class ConfigurationBasedAuthorizer
     }
 
     @Override
-    public AuthorizationResult authorize(Principal principal, Set<String> allowedRoles)
+    public AuthorizationResult authorize(Principal principal, Set<String> allowedRoles, String requestUrl)
     {
         for (String role : allowedRoles) {
             if (roleRegexMap.containsKey(role) && isPrincipalAuthorized(principal, roleRegexMap.get(role))) {

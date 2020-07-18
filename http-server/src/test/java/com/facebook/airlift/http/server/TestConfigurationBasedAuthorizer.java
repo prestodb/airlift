@@ -30,12 +30,12 @@ public class TestConfigurationBasedAuthorizer
             throws IOException
     {
         Authorizer authorizer = new ConfigurationBasedAuthorizer("src/test/resources/roles.properties");
-        assertTrue(authorizer.authorize(() -> "tom", ImmutableSet.of("user")).isAllowed());
-        assertTrue(authorizer.authorize(() -> "jerry", ImmutableSet.of("user")).isAllowed());
-        assertFalse(authorizer.authorize(() -> "jacob", ImmutableSet.of("user")).isAllowed());
-        assertTrue(authorizer.authorize(() -> "jacob", ImmutableSet.of("admin")).isAllowed());
-        assertFalse(authorizer.authorize(() -> "foo.bar", ImmutableSet.of("service")).isAllowed());
-        assertTrue(authorizer.authorize(() -> "gateway.airlift", ImmutableSet.of("service")).isAllowed());
-        assertTrue(authorizer.authorize(() -> "logger.airlift", ImmutableSet.of("service")).isAllowed());
+        assertTrue(authorizer.authorize(() -> "tom", ImmutableSet.of("user"), "").isAllowed());
+        assertTrue(authorizer.authorize(() -> "jerry", ImmutableSet.of("user"), "").isAllowed());
+        assertFalse(authorizer.authorize(() -> "jacob", ImmutableSet.of("user"), "").isAllowed());
+        assertTrue(authorizer.authorize(() -> "jacob", ImmutableSet.of("admin"), "").isAllowed());
+        assertFalse(authorizer.authorize(() -> "foo.bar", ImmutableSet.of("service"), "").isAllowed());
+        assertTrue(authorizer.authorize(() -> "gateway.airlift", ImmutableSet.of("service"), "").isAllowed());
+        assertTrue(authorizer.authorize(() -> "logger.airlift", ImmutableSet.of("service"), "").isAllowed());
     }
 }
