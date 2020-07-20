@@ -17,7 +17,9 @@ import com.facebook.airlift.log.Logger;
 import com.facebook.airlift.security.pem.PemReader;
 import com.google.common.hash.HashCode;
 import com.google.common.io.Files;
+import io.airlift.units.Duration;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -32,6 +34,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.hash.Hashing.sha256;
 import static java.util.Objects.requireNonNull;
 
@@ -44,23 +47,50 @@ public final class ReloadableSslContext
     private final FileWatch clientCertificatesFileWatch;
 
     private final AtomicReference<SSLContext> sslContext;
+    private final Duration sslContextRefreshTime;
 
-    public ReloadableSslContext(File trustCertificatesFile, File clientCertificatesFile)
+    @GuardedBy("this")
+    private Thread sslContextRefreshThread;
+
+    @GuardedBy("this")
+    private volatile boolean started;
+
+    public ReloadableSslContext(File trustCertificatesFile, File clientCertificatesFile, Duration sslContextRefreshTime)
             throws IOException, GeneralSecurityException
     {
         this.trustCertificatesFileWatch = new FileWatch(requireNonNull(trustCertificatesFile, "trustCertificatesFile is null"));
         this.clientCertificatesFileWatch = new FileWatch(requireNonNull(clientCertificatesFile, "clientCertificatesFile is null"));
+        this.sslContextRefreshTime = requireNonNull(sslContextRefreshTime, "sslContextRefreshTime is null");
+
         this.sslContext = new AtomicReference<>(loadSslContext());
-        refresh();
     }
 
     @Override
     public SSLContext get()
     {
+        checkState(started, "ReloadableSslContext must be in the started state");
         return sslContext.get();
     }
 
-    public synchronized void refresh()
+    public synchronized void start()
+    {
+        checkState(!started, "already started");
+        refresh();
+        sslContextRefreshThread = new Thread(this::run, "SSLContext Refresh Thread");
+        sslContextRefreshThread.setDaemon(true);
+        sslContextRefreshThread.start();
+        started = true;
+    }
+
+    public synchronized void stop()
+    {
+        checkState(started, "must be started");
+        sslContextRefreshThread.interrupt();
+        sslContextRefreshThread = null;
+        started = false;
+    }
+
+    private synchronized void refresh()
     {
         try {
             // every watch must be called each time to update status
@@ -71,6 +101,20 @@ public final class ReloadableSslContext
         catch (IOException | GeneralSecurityException | RuntimeException e) {
             // this method is not allowed to throw
             log.error(e, "Unable to reload SSL context");
+        }
+    }
+
+    private void run()
+    {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                refresh();
+                Thread.sleep(sslContextRefreshTime.toMillis());
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
     }
 
