@@ -48,6 +48,7 @@ public class AuthorizationFilter
     private final AuthorizationPolicy authorizationPolicy;
     private final Set<String> defaultAllowedRoles;
     private final Map<Class<?>, Map<String, String>> roleMaps;
+    private final boolean allowUnsecureRequestsInAuthorizer;
 
     @Context
     private ResourceInfo resourceInfo;
@@ -62,7 +63,8 @@ public class AuthorizationFilter
                 authorizer,
                 httpServerConfig.getDefaultAuthorizationPolicy(),
                 httpServerConfig.getDefaultAllowedRoles(),
-                roleMaps);
+                roleMaps,
+                httpServerConfig.isAllowUnsecureRequestsInAuthorizer());
     }
 
     @VisibleForTesting
@@ -70,17 +72,24 @@ public class AuthorizationFilter
             Authorizer authorizer,
             AuthorizationPolicy authorizationPolicy,
             Set<String> defaultAllowedRoles,
-            Map<Class<?>, Map<String, String>> roleMaps)
+            Map<Class<?>, Map<String, String>> roleMaps,
+            boolean allowUnsecureRequestsInAuthorizer)
     {
         this.authorizer = requireNonNull(authorizer, "authorizer is null");
         this.authorizationPolicy = requireNonNull(authorizationPolicy, "authorizationPolicy is null");
         this.defaultAllowedRoles = requireNonNull(defaultAllowedRoles, "defaultAllowedRoles is null");
         this.roleMaps = requireNonNull(roleMaps, "roleMaps is null");
+        this.allowUnsecureRequestsInAuthorizer = allowUnsecureRequestsInAuthorizer;
     }
 
     @Override
     public void filter(ContainerRequestContext request)
     {
+        // skip authorization if non-secure
+        if (!request.getSecurityContext().isSecure() && allowUnsecureRequestsInAuthorizer) {
+            return;
+        }
+
         Principal principal = request.getSecurityContext().getUserPrincipal();
         if (principal == null) {
             request.abortWith(Response.status(Response.Status.FORBIDDEN)

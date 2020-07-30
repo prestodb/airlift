@@ -128,6 +128,7 @@ public class HttpServerConfig
     private boolean authorizationEnabled;
     private AuthorizationPolicy defaultAuthorizationPolicy = AuthorizationPolicy.ALLOW;
     private Set<String> defaultAllowedRoles = ImmutableSet.of();
+    private boolean allowUnsecureRequestsInAuthorizer;
 
     public boolean isHttpEnabled()
     {
@@ -749,6 +750,19 @@ public class HttpServerConfig
                 .stream()
                 .map(role -> role.toLowerCase(ENGLISH))
                 .collect(toImmutableSet());
+        return this;
+    }
+
+    public boolean isAllowUnsecureRequestsInAuthorizer()
+    {
+        return allowUnsecureRequestsInAuthorizer;
+    }
+
+    @Config("http-server.authorization.allow-unsecured-requests")
+    @ConfigDescription("Skip authorization check for unsecured requests when this config is on")
+    public HttpServerConfig setAllowUnsecureRequestsInAuthorizer(boolean allowUnsecureRequestsInAuthorizer)
+    {
+        this.allowUnsecureRequestsInAuthorizer = allowUnsecureRequestsInAuthorizer;
         return this;
     }
 }

@@ -46,18 +46,21 @@ public class AuthorizationEnabledServlet
     private final AuthorizationPolicy authorizationPolicy;
     private final Set<String> defaultAllowedRoles;
     private final Optional<Set<String>> allowedRoles;
+    private final boolean allowUnsecureRequestsInAuthorizer;
 
     public AuthorizationEnabledServlet(
             Servlet delegate,
             Authorizer authorizer,
             AuthorizationPolicy authorizationPolicy,
-            Set<String> defaultAllowedRoles)
+            Set<String> defaultAllowedRoles,
+            boolean allowUnsecureRequestsInAuthorizer)
     {
         this.delegate = requireNonNull(delegate, "delegate is null");
         this.authorizer = requireNonNull(authorizer, "authorizer is null");
         this.authorizationPolicy = requireNonNull(authorizationPolicy, "authorizationPolicy is null");
         this.defaultAllowedRoles = requireNonNull(defaultAllowedRoles, "defaultAllowedRoles is null");
         this.allowedRoles = getRolesFromClassMetadata(delegate);
+        this.allowUnsecureRequestsInAuthorizer = allowUnsecureRequestsInAuthorizer;
     }
 
     @Override
@@ -74,6 +77,11 @@ public class AuthorizationEnabledServlet
     {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
+
+        // skip authorization if non-secure
+        if (!request.isSecure() && allowUnsecureRequestsInAuthorizer) {
+            return;
+        }
 
         Principal principal = request.getUserPrincipal();
         if (principal == null) {

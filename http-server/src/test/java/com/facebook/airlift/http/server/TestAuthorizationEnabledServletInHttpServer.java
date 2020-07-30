@@ -167,6 +167,30 @@ public class TestAuthorizationEnabledServletInHttpServer
         server.stop();
     }
 
+    @Test
+    public void testAllowUnsecureRequestsInAuthorizer()
+            throws Exception
+    {
+        Map<String, String> serverProperties = ImmutableMap.<String, String>builder()
+                .put("http-server.authorization.enabled", "true")
+                .put("http-server.authorization.default-policy", "DEFAULT_ROLES")
+                .put("http-server.authorization.default-allowed-roles", "internal, admin")
+                .put("http-server.authorization.allow-unsecured-requests", "true")
+                .build();
+        TestingHttpServer server = createServer(serverProperties);
+        server.start();
+        assertEquals(sendRequest(server, "unmarked").getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(sendRequest(server, "user").getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(sendRequest(server, "admin").getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(sendRequestWithRole(server, "unmarked", "user").getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(sendRequestWithRole(server, "user", "user").getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(sendRequestWithRole(server, "admin", "user").getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(sendRequestWithRole(server, "unmarked", "admin").getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(sendRequestWithRole(server, "user", "admin").getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(sendRequestWithRole(server, "admin", "admin").getStatusCode(), Response.Status.OK.getStatusCode());
+        server.stop();
+    }
+
     private StatusResponse sendRequest(TestingHttpServer server, String resource)
     {
         URI uri = uriBuilderFrom(server.getBaseUrl()).appendPath(resource).build();

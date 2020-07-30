@@ -437,7 +437,8 @@ public class HttpServer
                         servlet.getValue(),
                         authorizer,
                         config.getDefaultAuthorizationPolicy(),
-                        config.getDefaultAllowedRoles());
+                        config.getDefaultAllowedRoles(),
+                        config.isAllowUnsecureRequestsInAuthorizer());
                 ServletHolder holder = new ServletHolder(authorizationEnabledServlet);
                 holder.setInitParameters(ImmutableMap.copyOf(parameters));
                 context.addServlet(holder, servlet.getKey());

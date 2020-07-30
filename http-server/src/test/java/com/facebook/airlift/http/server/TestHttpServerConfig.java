@@ -86,7 +86,8 @@ public class TestHttpServerConfig
                 .setHttp2StreamIdleTimeout(new Duration(15, SECONDS))
                 .setAuthorizationEnabled(false)
                 .setDefaultAuthorizationPolicy(HttpServerConfig.AuthorizationPolicy.ALLOW)
-                .setDefaultAllowedRoles(""));
+                .setDefaultAllowedRoles("")
+                .setAllowUnsecureRequestsInAuthorizer(false));
     }
 
     @Test
@@ -141,6 +142,7 @@ public class TestHttpServerConfig
                 .put("http-server.authorization.enabled", "true")
                 .put("http-server.authorization.default-policy", "DENY")
                 .put("http-server.authorization.default-allowed-roles", "user, internal, admin")
+                .put("http-server.authorization.allow-unsecured-requests", "true")
                 .build();
 
         HttpServerConfig expected = new HttpServerConfig()
@@ -191,7 +193,8 @@ public class TestHttpServerConfig
                 .setHttp2StreamIdleTimeout(new Duration(23, SECONDS))
                 .setAuthorizationEnabled(true)
                 .setDefaultAuthorizationPolicy(HttpServerConfig.AuthorizationPolicy.DENY)
-                .setDefaultAllowedRoles("user, internal, admin");
+                .setDefaultAllowedRoles("user, internal, admin")
+                .setAllowUnsecureRequestsInAuthorizer(true);
 
         ConfigAssertions.assertFullMapping(properties, expected);
     }
