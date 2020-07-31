@@ -16,6 +16,7 @@
 package com.facebook.airlift.http.server;
 
 import com.facebook.airlift.discovery.client.AnnouncementHttpServerInfo;
+import com.facebook.airlift.http.server.HttpServer.ClientCertificate;
 import com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
@@ -71,6 +72,7 @@ public class HttpServerModule
         binder.disableCircularProxies();
 
         binder.bind(HttpServer.class).toProvider(HttpServerProvider.class).in(Scopes.SINGLETON);
+        newOptionalBinder(binder, ClientCertificate.class).setDefault().toInstance(ClientCertificate.NONE);
         newExporter(binder).export(HttpServer.class).withGeneratedName();
         binder.bind(HttpServerInfo.class).in(Scopes.SINGLETON);
         binder.bind(RequestStats.class).in(Scopes.SINGLETON);

@@ -14,6 +14,7 @@
 package com.facebook.airlift.http.server;
 
 import com.facebook.airlift.event.client.NullEventClient;
+import com.facebook.airlift.http.server.HttpServer.ClientCertificate;
 import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
 import com.google.common.collect.ImmutableMap;
@@ -213,6 +214,7 @@ public class TestHttpServerCipher
                 ImmutableSet.of(new DummyFilter()),
                 ImmutableSet.of(),
                 ImmutableSet.of(),
+                ClientCertificate.NONE,
                 new RequestStats(),
                 new NullEventClient(),
                 Optional.empty());

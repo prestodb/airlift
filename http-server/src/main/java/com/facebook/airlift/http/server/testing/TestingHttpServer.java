@@ -87,6 +87,7 @@ public class TestingHttpServer
                 null,
                 null,
                 ImmutableSet.of(),
+                ClientCertificate.NONE,
                 null,
                 null,
                 new TraceTokenManager(),

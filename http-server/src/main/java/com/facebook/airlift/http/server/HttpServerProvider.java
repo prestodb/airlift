@@ -16,6 +16,7 @@
 package com.facebook.airlift.http.server;
 
 import com.facebook.airlift.event.client.EventClient;
+import com.facebook.airlift.http.server.HttpServer.ClientCertificate;
 import com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
 import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
@@ -51,6 +52,7 @@ public class HttpServerProvider
     private final Servlet defaultServlet;
     private final Map<String, Servlet> servlets;
     private final Set<HttpResourceBinding> resources;
+    private final ClientCertificate clientCertificate;
     private Map<String, String> servletInitParameters = ImmutableMap.of();
     private Servlet theAdminServlet;
     private Map<String, String> adminServletInitParameters = ImmutableMap.of();
@@ -73,6 +75,7 @@ public class HttpServerProvider
             @TheServlet Set<Filter> filters,
             @TheServlet Set<HttpResourceBinding> resources,
             @TheAdminServlet Set<Filter> adminFilters,
+            ClientCertificate clientCertificate,
             RequestStats stats,
             EventClient eventClient,
             Optional<SslContextFactory.Server> sslContextFactory)
@@ -85,6 +88,7 @@ public class HttpServerProvider
         requireNonNull(filters, "filters is null");
         requireNonNull(resources, "resources is null");
         requireNonNull(adminFilters, "adminFilters is null");
+        requireNonNull(clientCertificate, "clientCertificate is null");
         requireNonNull(stats, "stats is null");
         requireNonNull(eventClient, "eventClient is null");
         requireNonNull(sslContextFactory, "sslContextFactory is null");
@@ -97,6 +101,7 @@ public class HttpServerProvider
         this.filters = ImmutableSet.copyOf(filters);
         this.resources = ImmutableSet.copyOf(resources);
         this.adminFilters = ImmutableSet.copyOf(adminFilters);
+        this.clientCertificate = clientCertificate;
         this.stats = stats;
         this.eventClient = eventClient;
         this.sslContextFactory = sslContextFactory;
@@ -159,6 +164,7 @@ public class HttpServerProvider
                     theAdminServlet,
                     adminServletInitParameters,
                     adminFilters,
+                    clientCertificate,
                     mbeanServer,
                     loginService,
                     traceTokenManager,

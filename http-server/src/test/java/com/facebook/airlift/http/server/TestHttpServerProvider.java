@@ -23,6 +23,7 @@ import com.facebook.airlift.http.client.Request;
 import com.facebook.airlift.http.client.StatusResponseHandler.StatusResponse;
 import com.facebook.airlift.http.client.StringResponseHandler.StringResponse;
 import com.facebook.airlift.http.client.jetty.JettyHttpClient;
+import com.facebook.airlift.http.server.HttpServer.ClientCertificate;
 import com.facebook.airlift.log.Logging;
 import com.facebook.airlift.node.NodeConfig;
 import com.facebook.airlift.node.NodeInfo;
@@ -75,6 +76,7 @@ public class TestHttpServerProvider
     private File tempDir;
     private NodeInfo nodeInfo;
     private HttpServerConfig config;
+    private ClientCertificate clientCertificate;
     private HttpServerInfo httpServerInfo;
 
     @BeforeSuite
@@ -92,6 +94,7 @@ public class TestHttpServerProvider
                 .setHttpPort(0)
                 .setHttpsPort(0)
                 .setLogPath(new File(tempDir, "http-request.log").getAbsolutePath());
+        clientCertificate = ClientCertificate.NONE;
         nodeInfo = new NodeInfo(new NodeConfig()
                 .setEnvironment("test")
                 .setNodeInternalAddress("localhost"));
@@ -322,6 +325,7 @@ public class TestHttpServerProvider
                 .setHttpsPort(0)
                 .setKeystorePath(getResource("clientcert-java/server.keystore").getPath())
                 .setKeystorePassword("airlift");
+        clientCertificate = ClientCertificate.REQUIRED;
 
         createAndStartServer(createCertTestServlet());
 
@@ -352,6 +356,7 @@ public class TestHttpServerProvider
                 .setKeystorePath(getResource("clientcert-pem/server.pem").getPath())
                 .setKeystorePassword("airlift")
                 .setTrustStorePath(getResource("clientcert-pem/ca.crt").getPath());
+        clientCertificate = ClientCertificate.REQUIRED;
 
         createAndStartServer(createCertTestServlet());
 
@@ -557,6 +562,7 @@ public class TestHttpServerProvider
                 ImmutableSet.of(new DummyFilter()),
                 ImmutableSet.of(),
                 ImmutableSet.of(),
+                clientCertificate,
                 new RequestStats(),
                 new NullEventClient(),
                 Optional.empty());
