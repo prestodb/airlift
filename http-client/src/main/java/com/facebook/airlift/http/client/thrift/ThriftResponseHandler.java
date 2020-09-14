@@ -24,17 +24,14 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.net.MediaType;
 
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.List;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.util.Objects.requireNonNull;
 
 public class ThriftResponseHandler<T>
-        implements ResponseHandler<ThriftResponseHandler.ThriftResponse, RuntimeException>
+        implements ResponseHandler<ThriftResponse<T>, RuntimeException>
 {
     private final ThriftCodec<T> thriftCodec;
 
@@ -44,13 +41,13 @@ public class ThriftResponseHandler<T>
     }
 
     @Override
-    public ThriftResponse handleException(Request request, Exception exception)
+    public ThriftResponse<T> handleException(Request request, Exception exception)
     {
         throw ResponseHandlerUtils.propagate(request, exception);
     }
 
     @Override
-    public ThriftResponse handle(Request request, Response response)
+    public ThriftResponse<T> handle(Request request, Response response)
     {
         T value = null;
         IllegalArgumentException exception = null;
@@ -64,7 +61,7 @@ public class ThriftResponseHandler<T>
         catch (Exception e) {
             exception = new IllegalArgumentException("Unable to create " + thriftCodec.getType() + " from THRIFT response", e);
         }
-        return new ThriftResponse(response.getStatusCode(), response.getStatusMessage(), response.getHeaders(), value, exception);
+        return new ThriftResponse<>(response.getStatusCode(), response.getStatusMessage(), response.getHeaders(), value, exception);
     }
 
     private Protocol getThriftProtocol(ListMultimap<HeaderName, String> headers)
@@ -81,60 +78,5 @@ public class ThriftResponseHandler<T>
         }
 
         return Protocol.valueOf(parameters.get("t").get(0).toUpperCase());
-    }
-
-    public class ThriftResponse
-    {
-        private final int statusCode;
-        private final String statusMessage;
-        private final ListMultimap<HeaderName, String> headers;
-        private final T value;
-        private final IllegalArgumentException exception;
-
-        ThriftResponse(int statusCode, String statusMessage, ListMultimap<HeaderName, String> headers, T value, IllegalArgumentException exception)
-        {
-            this.statusCode = requireNonNull(statusCode, "statusCode is null");
-            this.statusMessage = requireNonNull(statusMessage, "statusMessage is null");
-            this.headers = headers != null ? ImmutableListMultimap.copyOf(headers) : null;
-            this.value = value;
-            this.exception = exception;
-        }
-
-        public int getStatusCode()
-        {
-            return statusCode;
-        }
-
-        public String getStatusMessage()
-        {
-            return statusMessage;
-        }
-
-        public T getValue()
-        {
-            return value;
-        }
-
-        @Nullable
-        public String getHeader(String name)
-        {
-            List<String> values = getHeaders().get(HeaderName.of(name));
-            return values.isEmpty() ? null : values.get(0);
-        }
-
-        public List<String> getHeaders(String name)
-        {
-            return headers.get(HeaderName.of(name));
-        }
-
-        public ListMultimap<HeaderName, String> getHeaders()
-        {
-            return headers;
-        }
-
-        public IllegalArgumentException getException()
-        {
-            return exception;
-        }
     }
 }
