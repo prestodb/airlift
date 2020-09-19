@@ -14,6 +14,7 @@ public class ThriftResponse<T>
 {
     private final int statusCode;
     private final String statusMessage;
+    private final String errorMessage;
     private final ListMultimap<HeaderName, String> headers;
     private final T value;
     private final IllegalArgumentException exception;
@@ -21,12 +22,14 @@ public class ThriftResponse<T>
     ThriftResponse(
             int statusCode,
             String statusMessage,
+            String errorMessage,
             ListMultimap<HeaderName, String> headers,
             T value,
             IllegalArgumentException exception)
     {
         this.statusCode = statusCode;
         this.statusMessage = requireNonNull(statusMessage, "statusMessage is null");
+        this.errorMessage = errorMessage;
         this.headers = headers != null ? ImmutableListMultimap.copyOf(headers) : null;
         this.value = value;
         this.exception = exception;
@@ -40,6 +43,11 @@ public class ThriftResponse<T>
     public String getStatusMessage()
     {
         return statusMessage;
+    }
+
+    public String getErrorMessage()
+    {
+        return errorMessage;
     }
 
     public T getValue()

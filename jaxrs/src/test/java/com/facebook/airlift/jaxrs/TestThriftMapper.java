@@ -31,7 +31,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.zip.ZipException;
 
 import static org.testng.Assert.assertEquals;
@@ -56,9 +55,7 @@ public class TestThriftMapper
         ThriftMapper thriftMapper = new ThriftMapper(codecManager);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         MultivaluedMap<String, Object> headers = new GuavaMultivaluedMap<>();
-        HashMap<String, String> parameters = new HashMap<>();
-        parameters.put("t", "binary");
-        MediaType mediaType = new MediaType("application", "x-thrift", parameters);
+        MediaType mediaType = new MediaType("application", "x-thrift+binary");
         thriftMapper.writeTo(testThriftMessage, TestThriftMessage.class, null, null, mediaType, headers, outputStream);
         TestThriftMessage readFrom = (TestThriftMessage) thriftMapper.readFrom(Object.class, TestThriftMessage.class, null, mediaType, null, new ByteArrayInputStream(outputStream.toByteArray()));
         assertEquals(readFrom.getTestString(), testThriftMessage.getTestString());

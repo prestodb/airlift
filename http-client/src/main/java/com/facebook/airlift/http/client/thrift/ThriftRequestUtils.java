@@ -16,7 +16,9 @@ package com.facebook.airlift.http.client.thrift;
 import com.facebook.airlift.http.client.Request;
 import com.facebook.drift.codec.ThriftCodec;
 import com.facebook.drift.transport.netty.codec.Protocol;
-import com.google.common.net.MediaType;
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
 
 import static com.facebook.airlift.http.client.Request.Builder.prepareGet;
 import static com.facebook.airlift.http.client.Request.Builder.preparePost;
@@ -25,10 +27,10 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 
 public class ThriftRequestUtils
 {
-    private static final MediaType THRIFT_TYPE = MediaType.create("application", "x-thrift");
-    private static final String TYPE_BINARY = THRIFT_TYPE.withParameter("t", Protocol.BINARY.name()).toString().toLowerCase();
-    private static final String TYPE_COMPACT = THRIFT_TYPE.withParameter("t", Protocol.COMPACT.name()).toString().toLowerCase();
-    private static final String TYPE_FBCOMPACT = THRIFT_TYPE.withParameter("t", Protocol.FB_COMPACT.name()).toString().toLowerCase();
+    public static final String TYPE_BINARY = "application/x-thrift+binary";
+    public static final String TYPE_COMPACT = "application/x-thrift+compact";
+    public static final String TYPE_FBCOMPACT = "application/x-thrift+fb_compact";
+    public static final List<String> validThriftMimeTypes = ImmutableList.of(TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT);
 
     private ThriftRequestUtils() {}
 
@@ -50,8 +52,7 @@ public class ThriftRequestUtils
     {
         String type = getType(protocol);
         return prepareGet()
-                .setHeader(ACCEPT, type)
-                .setHeader(CONTENT_TYPE, type);
+                .setHeader(ACCEPT, type);
     }
 
     private static <T> ThriftBodyGenerator<T> createThriftBodyGenerator(T instance, ThriftCodec<T> thriftCodec, Protocol protocol)

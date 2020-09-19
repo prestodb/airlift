@@ -35,13 +35,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.Map;
 
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_BINARY;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_COMPACT;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_FBCOMPACT;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.validThriftMimeTypes;
 import static java.util.Objects.requireNonNull;
 
 @Provider
-@Consumes("application/x-thrift")
-@Produces("application/x-thrift")
+@Consumes({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+@Produces({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
 public class ThriftMapper
         extends BaseMapper
 {
@@ -117,14 +120,13 @@ public class ThriftMapper
 
     private Protocol getThriftProtocol(MediaType mediaType, ThriftCodec<?> thriftCodec)
     {
-        Map<String, String> parameters = mediaType.getParameters();
+        String mimeType = mediaType.toString();
 
-        if (!parameters.containsKey("t")) {
+        if (!validThriftMimeTypes.contains(mimeType)) {
             throw new IllegalArgumentException("Invalid response. No protocol type specified. Unable to create " + thriftCodec.getType() + " from THRIFT response");
         }
-        if (parameters.size() != 1) {
-            throw new IllegalArgumentException("Invalid response. Invalid parameter count:" + parameters.size() + " expected 1. Unable to create " + thriftCodec.getType() + " from THRIFT response");
-        }
-        return Protocol.valueOf(parameters.get("t").toUpperCase());
+
+        String encodingType = mimeType.substring("application/x-thrift+".length());
+        return Protocol.valueOf(encodingType.toUpperCase());
     }
 }

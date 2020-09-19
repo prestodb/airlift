@@ -19,6 +19,7 @@ import com.facebook.airlift.http.client.testing.TestingHttpClient;
 import com.facebook.airlift.http.client.thrift.ThriftBodyGenerator;
 import com.facebook.airlift.http.client.thrift.ThriftResponse;
 import com.facebook.airlift.http.client.thrift.ThriftResponseHandler;
+import com.facebook.airlift.jaxrs.ParsingExceptionMapper;
 import com.facebook.airlift.jaxrs.thrift.ThriftMapper;
 import com.facebook.drift.codec.ThriftCodec;
 import com.facebook.drift.codec.ThriftCodecManager;
@@ -39,6 +40,9 @@ import java.net.URI;
 
 import static com.facebook.airlift.http.client.Request.Builder.prepareGet;
 import static com.facebook.airlift.http.client.Request.Builder.preparePost;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_BINARY;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_COMPACT;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_FBCOMPACT;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftGet;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftPost;
 import static com.facebook.drift.transport.netty.codec.Protocol.BINARY;
@@ -54,7 +58,7 @@ import static org.testng.Assert.fail;
 public class TestJaxrsThriftTestingHttpProcessor
 {
     private ThriftCodecManager codecManager;
-    private TestingHttpClient httpCient;
+    private TestingHttpClient httpClient;
     private ThriftCodec<TestThriftMessage> testThriftMessageThriftCodec;
     private ThriftResponseHandler<TestThriftMessage> testThriftMessageTestThriftResponseHandler;
 
@@ -62,8 +66,13 @@ public class TestJaxrsThriftTestingHttpProcessor
     public void setup()
     {
         codecManager = new ThriftCodecManager(new CompilerThriftCodecFactory(false));
-        httpCient =
-                new TestingHttpClient(new JaxrsTestingHttpProcessor(URI.create("http://fake.invalid/"), new GetItResource(), new ThriftMapper(codecManager)));
+        httpClient =
+                new TestingHttpClient(
+                        new JaxrsTestingHttpProcessor(
+                            URI.create("http://fake.invalid/"),
+                            new GetPostResource(),
+                            new ThriftMapper(codecManager),
+                            new ParsingExceptionMapper()));
         testThriftMessageThriftCodec = codecManager.getCodec(TestThriftMessage.class);
         testThriftMessageTestThriftResponseHandler = new ThriftResponseHandler<>(testThriftMessageThriftCodec);
     }
@@ -72,7 +81,7 @@ public class TestJaxrsThriftTestingHttpProcessor
     public void teardown()
     {
         codecManager = null;
-        httpCient = null;
+        httpClient = null;
         testThriftMessageThriftCodec = null;
         testThriftMessageTestThriftResponseHandler = null;
     }
@@ -84,7 +93,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
                 .build();
 
-        ThriftResponse<TestThriftMessage> response = httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
+        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
 
         assertEquals(response.getStatusCode(), HttpStatus.OK.code());
         assertNotNull(response.getValue());
@@ -99,7 +108,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
                 .build();
 
-        ThriftResponse<TestThriftMessage> response = httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
+        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
 
         assertEquals(response.getStatusCode(), HttpStatus.OK.code());
         assertNotNull(response.getValue());
@@ -114,7 +123,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
                 .build();
 
-        ThriftResponse<TestThriftMessage> response = httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
+        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
 
         assertEquals(response.getStatusCode(), HttpStatus.OK.code());
         assertNotNull(response.getValue());
@@ -129,7 +138,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setUri(URI.create("http://fake.invalid/http-thrift/get/2"))
                 .build();
 
-        ThriftResponse<TestThriftMessage> response = httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
+        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
 
         assertEquals(response.getStatusCode(), HttpStatus.OK.code());
         assertNotNull(response.getValue());
@@ -144,7 +153,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setUri(URI.create("http://fake.invalid/http-thrift/get/2"))
                 .build();
 
-        ThriftResponse<TestThriftMessage> response = httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
+        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
 
         assertEquals(response.getStatusCode(), HttpStatus.OK.code());
         assertNotNull(response.getValue());
@@ -159,7 +168,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setUri(URI.create("http://fake.invalid/http-thrift/get/2"))
                 .build();
 
-        ThriftResponse<TestThriftMessage> response = httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
+        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
 
         assertEquals(response.getStatusCode(), HttpStatus.OK.code());
         assertNotNull(response.getValue());
@@ -176,14 +185,8 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setBodyGenerator(createThriftBodyGenerator(COMPACT))
                 .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
                 .build();
-        try {
-            httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
-            fail("expected exception");
-        }
-        catch (Exception e) {
-            assertEquals(e.getMessage(), "com.facebook.airlift.jaxrs.thrift.ThriftMapperParsingException: " +
-                    "Invalid thrift input for Java type class com.facebook.airlift.jaxrs.testing.TestThriftMessage");
-        }
+        ThriftResponse response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
+        assertEquals(response.getStatusCode(), HttpStatus.UNSUPPORTED_MEDIA_TYPE.code());
     }
 
     private ThriftBodyGenerator<TestThriftMessage> createThriftBodyGenerator(Protocol protocol)
@@ -199,7 +202,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .build();
 
         try {
-            httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
+            httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
             fail("expected exception");
         }
         catch (TestingException e) {
@@ -214,34 +217,34 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setUri(URI.create("http://fake.invalid/unknown"))
                 .build();
 
-        ThriftResponse<TestThriftMessage> response = httpCient.execute(request, testThriftMessageTestThriftResponseHandler);
+        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
         assertEquals(response.getStatusCode(), 404);
     }
 
     @Path("http-thrift")
-    public static class GetItResource
+    public static class GetPostResource
     {
         @Path("get/{id}")
         @GET
-        @Produces("application/x-thrift")
-        public TestThriftMessage getTestThriftMessage(@PathParam("id") long id)
+        @Produces({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+        public TestThriftMessage getTestMessage(@PathParam("id") long id)
         {
             return new TestThriftMessage("abc", id);
         }
 
         @Path("post/{id}")
         @POST
-        @Consumes("application/x-thrift")
-        @Produces("application/x-thrift")
-        public TestThriftMessage postTestThriftMessage(@PathParam("id") long id, TestThriftMessage testThriftMessage)
+        @Consumes({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+        @Produces({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+        public TestThriftMessage postTestMessage(@PathParam("id") long id, TestThriftMessage testThriftMessage)
         {
             return new TestThriftMessage(testThriftMessage.getTestString(), id + testThriftMessage.getTestLong());
         }
 
         @Path("fail/{message}")
         @GET
-        @Consumes("application/x-thrift")
-        @Produces("application/x-thrift")
+        @Consumes({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+        @Produces({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
         public TestThriftMessage fail(@PathParam("message") String errorMessage)
         {
             throw new TestingException(errorMessage);

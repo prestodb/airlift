@@ -20,15 +20,19 @@ import com.facebook.airlift.http.client.ResponseHandler;
 import com.facebook.airlift.http.client.ResponseHandlerUtils;
 import com.facebook.drift.codec.ThriftCodec;
 import com.facebook.drift.transport.netty.codec.Protocol;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.io.ByteSource;
 import com.google.common.net.MediaType;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.validThriftMimeTypes;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.util.Objects.requireNonNull;
+import static org.eclipse.jetty.http.HttpStatus.isClientError;
 
 public class ThriftResponseHandler<T>
         implements ResponseHandler<ThriftResponse<T>, RuntimeException>
@@ -49,6 +53,10 @@ public class ThriftResponseHandler<T>
     @Override
     public ThriftResponse<T> handle(Request request, Response response)
     {
+        if (isClientError(response.getStatusCode())) {
+            return createErrorResponse(response);
+        }
+
         T value = null;
         IllegalArgumentException exception = null;
         try {
@@ -61,7 +69,25 @@ public class ThriftResponseHandler<T>
         catch (Exception e) {
             exception = new IllegalArgumentException("Unable to create " + thriftCodec.getType() + " from THRIFT response", e);
         }
-        return new ThriftResponse<>(response.getStatusCode(), response.getStatusMessage(), response.getHeaders(), value, exception);
+        return new ThriftResponse<>(response.getStatusCode(), response.getStatusMessage(), null, response.getHeaders(), value, exception);
+    }
+
+    private ThriftResponse<T> createErrorResponse(Response response)
+    {
+        ByteSource byteSource = new ByteSource() {
+            @Override
+            public InputStream openStream() throws IOException
+            {
+                return response.getInputStream();
+            }
+        };
+        try {
+            String errorMessage = byteSource.asCharSource(StandardCharsets.UTF_8).read();
+            return new ThriftResponse<>(response.getStatusCode(), response.getStatusMessage(), errorMessage, response.getHeaders(), null, null);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private Protocol getThriftProtocol(ListMultimap<HeaderName, String> headers)
@@ -71,12 +97,15 @@ public class ThriftResponseHandler<T>
             throw new IllegalArgumentException("Invalid response. Unable to create " + thriftCodec.getType() + " from THRIFT response");
         }
 
-        ImmutableListMultimap<String, String> parameters = MediaType.parse(headers.get(contentTypeHeader).get(0)).parameters();
+        MediaType mediaType = MediaType.parse(headers.get(contentTypeHeader).get(0));
+        //Sample mimeType : application/x-thrift+binary
+        String mimeType = mediaType.toString().toLowerCase();
 
-        if (!parameters.containsKey("t") || parameters.get("t").size() != 1) {
+        if (!validThriftMimeTypes.contains(mimeType)) {
             throw new IllegalArgumentException("Invalid response. Unable to create " + thriftCodec.getType() + " from THRIFT response");
         }
 
-        return Protocol.valueOf(parameters.get("t").get(0).toUpperCase());
+        String encodingType = mimeType.substring("application/x-thrift+".length());
+        return Protocol.valueOf(encodingType.toUpperCase());
     }
 }
