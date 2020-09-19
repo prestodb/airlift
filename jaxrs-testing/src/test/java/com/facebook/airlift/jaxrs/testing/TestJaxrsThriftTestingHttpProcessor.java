@@ -17,6 +17,7 @@ import com.facebook.airlift.http.client.HttpStatus;
 import com.facebook.airlift.http.client.Request;
 import com.facebook.airlift.http.client.testing.TestingHttpClient;
 import com.facebook.airlift.http.client.thrift.ThriftBodyGenerator;
+import com.facebook.airlift.http.client.thrift.ThriftRequestUtils;
 import com.facebook.airlift.http.client.thrift.ThriftResponse;
 import com.facebook.airlift.http.client.thrift.ThriftResponseHandler;
 import com.facebook.airlift.jaxrs.ParsingExceptionMapper;
@@ -25,6 +26,7 @@ import com.facebook.drift.codec.ThriftCodec;
 import com.facebook.drift.codec.ThriftCodecManager;
 import com.facebook.drift.codec.internal.compiler.CompilerThriftCodecFactory;
 import com.facebook.drift.transport.netty.codec.Protocol;
+import com.google.common.net.HttpHeaders;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -45,6 +47,7 @@ import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_CO
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_FBCOMPACT;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftGet;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftPost;
+import static com.facebook.drift.protocol.TType.STOP;
 import static com.facebook.drift.transport.netty.codec.Protocol.BINARY;
 import static com.facebook.drift.transport.netty.codec.Protocol.COMPACT;
 import static com.facebook.drift.transport.netty.codec.Protocol.FB_COMPACT;
@@ -52,6 +55,7 @@ import static com.google.common.net.HttpHeaders.ACCEPT;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 @Test
@@ -187,6 +191,22 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .build();
         ThriftResponse response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
         assertEquals(response.getStatusCode(), HttpStatus.UNSUPPORTED_MEDIA_TYPE.code());
+    }
+
+    @Test
+    public void testInvalidRequestBody()
+    {
+        Request request = preparePost()
+                .setHeader(ACCEPT, ThriftRequestUtils.TYPE_COMPACT)
+                .setHeader(HttpHeaders.CONTENT_TYPE, ThriftRequestUtils.TYPE_COMPACT)
+                //Setting an invalid request body
+                .setBodyGenerator(out -> out.write(new byte[] {'C', 'A', 'F', 'E', 'B', 'A', 'B', 'E', STOP}))
+                .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
+                .build();
+
+        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
+        assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST.code());
+        assertTrue(response.getErrorMessage().startsWith("com.facebook.airlift.jaxrs.thrift.ThriftMapperParsingException"));
     }
 
     private ThriftBodyGenerator<TestThriftMessage> createThriftBodyGenerator(Protocol protocol)

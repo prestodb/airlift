@@ -75,7 +75,7 @@ public class ThriftMapper
         }
         catch (Exception e) {
             // we want to return a 400 for bad Thrift but not for a real IO exception
-            if (e instanceof IOException && !(e instanceof EOFException)) {
+            if (e instanceof IOException && !(e instanceof ThriftProtocolException) && !(e instanceof EOFException)) {
                 throw (IOException) e;
             }
             //The IOException is likely to be wrapped into a TTransportException
