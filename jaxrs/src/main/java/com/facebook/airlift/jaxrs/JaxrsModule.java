@@ -18,6 +18,8 @@ package com.facebook.airlift.jaxrs;
 import com.facebook.airlift.configuration.AbstractConfigurationAwareModule;
 import com.facebook.airlift.http.server.HttpServerConfig;
 import com.facebook.airlift.http.server.TheServlet;
+import com.facebook.airlift.jaxrs.thrift.ThriftMapper;
+import com.facebook.drift.codec.guice.ThriftCodecModule;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Binder;
 import com.google.inject.Key;
@@ -58,6 +60,8 @@ public class JaxrsModule
         binder.bind(Servlet.class).annotatedWith(TheServlet.class).to(Key.get(ServletContainer.class));
         jaxrsBinder(binder).bind(JsonMapper.class);
         jaxrsBinder(binder).bind(SmileMapper.class);
+        binder.install(new ThriftCodecModule());
+        jaxrsBinder(binder).bind(ThriftMapper.class);
         jaxrsBinder(binder).bind(ParsingExceptionMapper.class);
         jaxrsBinder(binder).bind(OverrideMethodFilter.class);
 
