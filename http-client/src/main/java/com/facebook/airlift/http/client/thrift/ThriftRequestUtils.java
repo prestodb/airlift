@@ -27,10 +27,10 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 
 public class ThriftRequestUtils
 {
-    public static final String TYPE_BINARY = "application/x-thrift+binary";
-    public static final String TYPE_COMPACT = "application/x-thrift+compact";
-    public static final String TYPE_FBCOMPACT = "application/x-thrift+fb_compact";
-    public static final List<String> validThriftMimeTypes = ImmutableList.of(TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT);
+    public static final String APPLICATION_THRIFT_BINARY = "application/x-thrift+binary";
+    public static final String APPLICATION_THRIFT_COMPACT = "application/x-thrift+compact";
+    public static final String APPLICATION_THRIFT_FB_COMPACT = "application/x-thrift+fb_compact";
+    public static final List<String> validThriftMimeTypes = ImmutableList.of(APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT);
 
     private ThriftRequestUtils() {}
 
@@ -64,11 +64,11 @@ public class ThriftRequestUtils
     {
         switch (protocol) {
             case BINARY:
-                return TYPE_BINARY;
+                return APPLICATION_THRIFT_BINARY;
             case COMPACT:
-                return TYPE_COMPACT;
+                return APPLICATION_THRIFT_COMPACT;
             case FB_COMPACT:
-                return TYPE_FBCOMPACT;
+                return APPLICATION_THRIFT_FB_COMPACT;
             default:
                 throw new IllegalArgumentException("Invalid thrift protocol");
         }

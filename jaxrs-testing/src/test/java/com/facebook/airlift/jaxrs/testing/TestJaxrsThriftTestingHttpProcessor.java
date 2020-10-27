@@ -42,9 +42,9 @@ import java.net.URI;
 
 import static com.facebook.airlift.http.client.Request.Builder.prepareGet;
 import static com.facebook.airlift.http.client.Request.Builder.preparePost;
-import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_BINARY;
-import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_COMPACT;
-import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_FBCOMPACT;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_BINARY;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_COMPACT;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_FB_COMPACT;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftGet;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftPost;
 import static com.facebook.drift.protocol.TType.STOP;
@@ -197,8 +197,8 @@ public class TestJaxrsThriftTestingHttpProcessor
     public void testInvalidRequestBody()
     {
         Request request = preparePost()
-                .setHeader(ACCEPT, ThriftRequestUtils.TYPE_COMPACT)
-                .setHeader(HttpHeaders.CONTENT_TYPE, ThriftRequestUtils.TYPE_COMPACT)
+                .setHeader(ACCEPT, ThriftRequestUtils.APPLICATION_THRIFT_COMPACT)
+                .setHeader(HttpHeaders.CONTENT_TYPE, ThriftRequestUtils.APPLICATION_THRIFT_COMPACT)
                 //Setting an invalid request body
                 .setBodyGenerator(out -> out.write(new byte[] {'C', 'A', 'F', 'E', 'B', 'A', 'B', 'E', STOP}))
                 .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
@@ -246,7 +246,7 @@ public class TestJaxrsThriftTestingHttpProcessor
     {
         @Path("get/{id}")
         @GET
-        @Produces({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+        @Produces({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
         public TestThriftMessage getTestMessage(@PathParam("id") long id)
         {
             return new TestThriftMessage("abc", id);
@@ -254,8 +254,8 @@ public class TestJaxrsThriftTestingHttpProcessor
 
         @Path("post/{id}")
         @POST
-        @Consumes({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
-        @Produces({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+        @Consumes({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
+        @Produces({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
         public TestThriftMessage postTestMessage(@PathParam("id") long id, TestThriftMessage testThriftMessage)
         {
             return new TestThriftMessage(testThriftMessage.getTestString(), id + testThriftMessage.getTestLong());
@@ -263,8 +263,8 @@ public class TestJaxrsThriftTestingHttpProcessor
 
         @Path("fail/{message}")
         @GET
-        @Consumes({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
-        @Produces({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+        @Consumes({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
+        @Produces({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
         public TestThriftMessage fail(@PathParam("message") String errorMessage)
         {
             throw new TestingException(errorMessage);

@@ -36,20 +36,25 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_BINARY;
-import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_COMPACT;
-import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.TYPE_FBCOMPACT;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_BINARY;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_COMPACT;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_FB_COMPACT;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.validThriftMimeTypes;
+import static com.facebook.airlift.jaxrs.thrift.ThriftMapper.APPLICATION_THRIFT_BINARY_QS;
+import static com.facebook.airlift.jaxrs.thrift.ThriftMapper.APPLICATION_THRIFT_COMPACT_QS;
+import static com.facebook.airlift.jaxrs.thrift.ThriftMapper.APPLICATION_THRIFT_FB_COMPACT_QS;
 import static java.util.Objects.requireNonNull;
 
 @Provider
-@Consumes({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
-@Produces({TYPE_BINARY, TYPE_COMPACT, TYPE_FBCOMPACT})
+@Consumes({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
+@Produces({APPLICATION_THRIFT_BINARY_QS, APPLICATION_THRIFT_COMPACT_QS, APPLICATION_THRIFT_FB_COMPACT_QS})
 public class ThriftMapper
         extends BaseMapper
 {
     public static final Logger log = Logger.get(ThriftMapper.class);
-
+    static final String APPLICATION_THRIFT_BINARY_QS = "application/x-thrift+binary; qs=0.1";
+    static final String APPLICATION_THRIFT_COMPACT_QS = "application/x-thrift+compact; qs=0.1";
+    static final String APPLICATION_THRIFT_FB_COMPACT_QS = "application/x-thrift+fb_compact; qs=0.1";
     private final ThriftCodecManager thriftCodecManager;
 
     @Inject
