@@ -328,7 +328,6 @@ public class TestAuthorizationEnabledServletInHttpServer
                 .build();
 
         return new Bootstrap(modules)
-                .strictConfig()
                 .doNotInitializeLogging()
                 .setOptionalConfigurationProperties(serverProperties)
                 .quiet()

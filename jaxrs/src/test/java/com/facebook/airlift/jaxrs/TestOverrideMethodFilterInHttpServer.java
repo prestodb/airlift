@@ -296,7 +296,6 @@ public class TestOverrideMethodFilterInHttpServer
                     .build();
 
             return new Bootstrap(modules)
-                    .strictConfig()
                     .doNotInitializeLogging()
                     .quiet()
                     .initialize()

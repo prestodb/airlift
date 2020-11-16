@@ -398,7 +398,6 @@ public class TestAuthorizationFilterInHttpServer
                 .build();
 
         return new Bootstrap(modules)
-                .strictConfig()
                 .doNotInitializeLogging()
                 .setOptionalConfigurationProperties(serverProperties)
                 .quiet()

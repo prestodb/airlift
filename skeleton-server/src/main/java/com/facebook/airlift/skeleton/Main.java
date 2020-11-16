@@ -57,7 +57,7 @@ public final class Main
                 new MainModule());
 
         try {
-            Injector injector = app.strictConfig().initialize();
+            Injector injector = app.initialize();
             injector.getInstance(Announcer.class).start();
         }
         catch (Throwable e) {

@@ -49,6 +49,7 @@ import java.util.TreeMap;
 
 import static com.facebook.airlift.configuration.ConfigurationLoader.getSystemProperties;
 import static com.facebook.airlift.configuration.ConfigurationLoader.loadPropertiesFrom;
+import static java.lang.Boolean.parseBoolean;
 
 /**
  * Entry point for an application built using the platform codebase.
@@ -69,9 +70,9 @@ public class Bootstrap
     private Map<String, String> requiredConfigurationProperties;
     private Map<String, String> optionalConfigurationProperties;
     private boolean initializeLogging = true;
-    private boolean quiet;
-    private boolean strictConfig;
-    private boolean requireExplicitBindings = true;
+    private boolean quiet = getDefaultFromProperties("bootstrap.quiet", false);
+    private boolean strictConfig = getDefaultFromProperties("bootstrap.strict-config", true);
+    private boolean requireExplicitBindings = getDefaultFromProperties("bootstrap.require-explicit-bindings", true);
 
     private boolean initialized;
 
@@ -138,9 +139,14 @@ public class Bootstrap
         return this;
     }
 
-    public Bootstrap strictConfig()
+    /**
+     * Disable the requirement that required configuration property must be used
+     * in some Config classes. This could be useful for testing purpose when
+     * deploying an old Presto version with the latest set of config properties.
+     */
+    public Bootstrap noStrictConfig()
     {
-        this.strictConfig = true;
+        this.strictConfig = false;
         return this;
     }
 
@@ -290,5 +296,14 @@ public class Bootstrap
             }
         }
         return columnPrinter;
+    }
+
+    private boolean getDefaultFromProperties(String propertyName, boolean defaultValue)
+    {
+        String propertyValue = System.getProperty(propertyName);
+        if (propertyValue != null) {
+            return parseBoolean(propertyValue);
+        }
+        return defaultValue;
     }
 }

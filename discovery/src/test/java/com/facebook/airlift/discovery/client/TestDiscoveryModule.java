@@ -32,7 +32,6 @@ public class TestDiscoveryModule
                 new DiscoveryModule());
 
         Injector injector = app
-                .strictConfig()
                 .doNotInitializeLogging()
                 .initialize();
 
