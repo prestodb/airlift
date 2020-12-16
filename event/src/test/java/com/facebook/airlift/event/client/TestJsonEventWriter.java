@@ -22,6 +22,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.time.ZonedDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,7 +41,11 @@ public class TestJsonEventWriter
             throws Exception
     {
         Set<EventTypeMetadata<?>> eventTypes = getValidEventTypeMetaDataSet(
-                FixedDummyEventClass.class, NestedDummyEventClass.class, CircularEventClass.class, ChainedCircularEventClass.class);
+                FixedDummyEventClass.class,
+                FixedDummyEventWithZonedDateTimeClass.class,
+                NestedDummyEventClass.class,
+                NestedDummyEventWithZonedDateTimeClass.class,
+                CircularEventClass.class, ChainedCircularEventClass.class);
         eventWriter = new JsonEventWriter(eventTypes);
     }
 
@@ -62,6 +67,16 @@ public class TestJsonEventWriter
     }
 
     @Test
+    public void testNullValueWithZonedDateTime()
+            throws Exception
+    {
+        FixedDummyEventWithZonedDateTimeClass event = new FixedDummyEventWithZonedDateTimeClass(
+                "localhost", ZonedDateTime.parse("2011-09-09T01:59:59.999Z"), UUID.fromString("1ea8ca34-db36-11e0-b76f-8b7d505ab1ad"), 123, null);
+
+        assertEventJson(createEventGenerator(ImmutableList.of(event)), "nullValue.json");
+    }
+
+    @Test
     public void testNestedEvent()
             throws Exception
     {
@@ -70,6 +85,23 @@ public class TestJsonEventWriter
                 ImmutableList.of("abc", "xyz"),
                 new NestedPart("first", new NestedPart("second", new NestedPart("third", null))),
                 ImmutableList.of(new NestedPart("listFirst", new NestedPart("listSecond", null)), new NestedPart("listThird", null)));
+
+        assertEventJson(createEventGenerator(ImmutableList.of(nestedEvent)), "nested.json");
+    }
+
+    @Test
+    public void testNestedEventWithZonedDateTime()
+            throws Exception
+    {
+        NestedDummyEventWithZonedDateTimeClass nestedEvent = new NestedDummyEventWithZonedDateTimeClass(
+                "localhost", ZonedDateTime.parse("2011-09-09T01:48:08.888Z"), UUID.fromString("6b598c2a-0a95-4f3f-9298-5a4d70ca13fc"), 9999, "nested",
+                ImmutableList.of("abc", "xyz"),
+                new NestedDummyEventWithZonedDateTimeClass.NestedPart("first",
+                             new NestedDummyEventWithZonedDateTimeClass.NestedPart("second",
+                                new NestedDummyEventWithZonedDateTimeClass.NestedPart("third", null))),
+                ImmutableList.of(new NestedDummyEventWithZonedDateTimeClass.NestedPart("listFirst",
+                             new NestedDummyEventWithZonedDateTimeClass.NestedPart("listSecond", null)),
+                                new NestedDummyEventWithZonedDateTimeClass.NestedPart("listThird", null)));
 
         assertEventJson(createEventGenerator(ImmutableList.of(nestedEvent)), "nested.json");
     }

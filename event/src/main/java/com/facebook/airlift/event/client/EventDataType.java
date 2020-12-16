@@ -29,6 +29,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Map;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -136,6 +138,15 @@ enum EventDataType
         }
     },
 
+    ZONEDDATETIME(ZonedDateTime.class) {
+        public void writeFieldValue(JsonGenerator jsonGenerator, Object value)
+                throws IOException
+        {
+            validateFieldValueType(value, ZonedDateTime.class);
+            jsonGenerator.writeString(ISO_ZONEDDATETIME_FORMAT.format((ZonedDateTime) value));
+        }
+    },
+
     DATETIME(DateTime.class) {
         public void writeFieldValue(JsonGenerator jsonGenerator, Object value)
                 throws IOException
@@ -172,6 +183,7 @@ enum EventDataType
         }
     };
 
+    private static final java.time.format.DateTimeFormatter ISO_ZONEDDATETIME_FORMAT = java.time.format.DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter ISO_DATETIME_FORMAT = ISODateTimeFormat.dateTime().withZone(DateTimeZone.UTC);
 
     private static final Map<Class<?>, EventDataType> byType;
