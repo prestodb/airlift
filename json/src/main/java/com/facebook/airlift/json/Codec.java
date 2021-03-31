@@ -13,9 +13,16 @@
  */
 package com.facebook.airlift.json;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+
 public interface Codec<T>
 {
     byte[] toBytes(T instance);
 
     T fromBytes(byte[] bytes);
+
+    void writeBytes(OutputStream output, T instance);
+
+    T readBytes(InputStream input);
 }

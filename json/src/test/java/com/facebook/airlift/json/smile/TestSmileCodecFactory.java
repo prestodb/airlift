@@ -9,6 +9,8 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -148,6 +150,17 @@ public class TestSmileCodecFactory
     {
         SmileCodec<Map<String, ImmutablePerson>> smileCodec = codecFactory.smileCodec(new TypeToken<Map<String, ImmutablePerson>>() {}.getType());
         validateImmutablePersonMapSmileCodec(smileCodec);
+    }
+
+    @Test
+    public void testWriteBytes()
+    {
+        SmileCodec<ImmutablePerson> personCodec = codecFactory.smileCodec(ImmutablePerson.class);
+        ImmutablePerson person = new ImmutablePerson("person-1", true);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        personCodec.writeBytes(output, person);
+        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+        assertEquals(personCodec.readBytes(input), person);
     }
 
     private void validatePersonListSmileCodec(SmileCodec<List<Person>> smileCodec)

@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeToken;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -107,6 +109,17 @@ public class TestJsonCodecFactory
         JsonCodec<Map<String, Person>> jsonCodec = jsonCodecFactory.jsonCodec(new TypeToken<Map<String, Person>>() {});
 
         validateMapCodec(jsonCodec);
+    }
+
+    @Test
+    public void testWriteBytes()
+    {
+        JsonCodec<ImmutablePerson> personCodec = jsonCodecFactory.jsonCodec(ImmutablePerson.class);
+        ImmutablePerson person = new ImmutablePerson("person-1", true);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        personCodec.writeBytes(output, person);
+        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+        assertEquals(personCodec.readBytes(input), person);
     }
 
     private void validateMapCodec(JsonCodec<Map<String, Person>> jsonCodec)

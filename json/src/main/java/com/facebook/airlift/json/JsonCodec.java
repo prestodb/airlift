@@ -23,6 +23,8 @@ import com.google.common.reflect.TypeParameter;
 import com.google.common.reflect.TypeToken;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -226,6 +228,28 @@ public class JsonCodec<T>
     public T fromBytes(byte[] bytes)
     {
         return fromJson(bytes);
+    }
+
+    @Override
+    public void writeBytes(OutputStream output, T instance)
+    {
+        try {
+            mapper.writeValue(output, instance);
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException(format("%s could not be converted to JSON", instance.getClass().getName()), e);
+        }
+    }
+
+    @Override
+    public T readBytes(InputStream input)
+    {
+        try {
+            return mapper.readValue(input, javaType);
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException(format("Invalid JSON bytes for %s", javaType), e);
+        }
     }
 
     @SuppressWarnings("unchecked")
