@@ -35,9 +35,10 @@ import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class JsonCodec<T>
+        implements Codec<T>
 {
     private static final Supplier<ObjectMapper> OBJECT_MAPPER_SUPPLIER = Suppliers.memoize(
-            () -> new ObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
+            () -> new JsonObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
 
     public static <T> JsonCodec<T> jsonCodec(Class<T> type)
     {
@@ -213,6 +214,18 @@ public class JsonCodec<T>
         catch (IOException e) {
             throw new IllegalArgumentException(format("%s could not be converted to JSON", instance.getClass().getName()), e);
         }
+    }
+
+    @Override
+    public byte[] toBytes(T instance)
+    {
+        return toJsonBytes(instance);
+    }
+
+    @Override
+    public T fromBytes(byte[] bytes)
+    {
+        return fromJson(bytes);
     }
 
     @SuppressWarnings("unchecked")

@@ -9,7 +9,7 @@ import com.facebook.airlift.http.server.testing.TestingHttpServer;
 import com.facebook.airlift.http.server.testing.TestingHttpServerModule;
 import com.facebook.airlift.jaxrs.JaxrsModule;
 import com.facebook.airlift.json.JsonModule;
-import com.facebook.airlift.json.ObjectMapperProvider;
+import com.facebook.airlift.json.JsonObjectMapperProvider;
 import com.facebook.airlift.node.testing.TestingNodeModule;
 import com.facebook.airlift.testing.Closeables;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -176,7 +176,7 @@ public class TestMBeanResource
         assertEquals(response.getStatusCode(), 200, response.getBody());
         assertContentType(response, JSON_UTF_8);
 
-        return new ObjectMapperProvider().get().readTree(response.getBody());
+        return new JsonObjectMapperProvider().get().readTree(response.getBody());
     }
 
     private JsonNode jsonpRequest(URI uri)
@@ -196,7 +196,7 @@ public class TestMBeanResource
         assertTrue(jsonp.endsWith(")"), jsonp);
         jsonp = jsonp.substring(5, jsonp.length() - 1);
 
-        return new ObjectMapperProvider().get().readTree(jsonp);
+        return new JsonObjectMapperProvider().get().readTree(jsonp);
     }
 
     private URI uriFor(String path)

@@ -44,7 +44,7 @@ import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
-public class ObjectMapperProvider
+public abstract class ObjectMapperProvider
         implements Provider<ObjectMapper>
 {
     private final JsonFactory jsonFactory;
@@ -56,13 +56,7 @@ public class ObjectMapperProvider
 
     private final Set<Module> modules = new HashSet<>();
 
-    @Inject
-    public ObjectMapperProvider()
-    {
-        this(new JsonFactory());
-    }
-
-    public ObjectMapperProvider(JsonFactory jsonFactory)
+    protected ObjectMapperProvider(JsonFactory jsonFactory)
     {
         this.jsonFactory = requireNonNull(jsonFactory, "jsonFactory is null");
 

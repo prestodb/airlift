@@ -1,6 +1,4 @@
 /*
- * Copyright 2010 Proofpoint, Inc.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,9 +11,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.facebook.airlift.json;
+package com.facebook.airlift.json.smile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.Beta;
 import com.google.common.reflect.TypeParameter;
 import com.google.common.reflect.TypeToken;
 
@@ -26,58 +25,46 @@ import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
-import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
 import static java.util.Objects.requireNonNull;
 
-public class JsonCodecFactory
+@Beta
+public class SmileCodecFactory
 {
     private final Provider<ObjectMapper> objectMapperProvider;
-    private final boolean prettyPrint;
 
-    public JsonCodecFactory()
+    public SmileCodecFactory()
     {
-        this(new JsonObjectMapperProvider());
+        this(new SmileObjectMapperProvider());
     }
 
     @Inject
-    public JsonCodecFactory(Provider<ObjectMapper> objectMapperProvider)
+    public SmileCodecFactory(@ForSmile Provider<ObjectMapper> smileObjectMapperProvider)
     {
-        this(objectMapperProvider, false);
+        this.objectMapperProvider = requireNonNull(smileObjectMapperProvider, "smileObjectMapperProvider is null");
     }
 
-    public JsonCodecFactory(Provider<ObjectMapper> objectMapperProvider, boolean prettyPrint)
-    {
-        this.objectMapperProvider = objectMapperProvider;
-        this.prettyPrint = prettyPrint;
-    }
-
-    public JsonCodecFactory prettyPrint()
-    {
-        return new JsonCodecFactory(objectMapperProvider, true);
-    }
-
-    public <T> JsonCodec<T> jsonCodec(Class<T> type)
+    public <T> SmileCodec<T> smileCodec(Class<T> type)
     {
         requireNonNull(type, "type is null");
 
-        return new JsonCodec<>(createObjectMapper(), type);
+        return new SmileCodec<>(createObjectMapper(), type);
     }
 
-    public <T> JsonCodec<T> jsonCodec(Type type)
+    public <T> SmileCodec<T> smileCodec(Type type)
     {
         requireNonNull(type, "type is null");
 
-        return new JsonCodec<>(createObjectMapper(), type);
+        return new SmileCodec<>(createObjectMapper(), type);
     }
 
-    public <T> JsonCodec<T> jsonCodec(TypeToken<T> type)
+    public <T> SmileCodec<T> smileCodec(TypeToken<T> type)
     {
         requireNonNull(type, "type is null");
 
-        return new JsonCodec<>(createObjectMapper(), type.getType());
+        return new SmileCodec<>(createObjectMapper(), type.getType());
     }
 
-    public <T> JsonCodec<List<T>> listJsonCodec(Class<T> type)
+    public <T> SmileCodec<List<T>> listSmileCodec(Class<T> type)
     {
         requireNonNull(type, "type is null");
 
@@ -85,10 +72,10 @@ public class JsonCodecFactory
                 .where(new TypeParameter<T>() {}, type)
                 .getType();
 
-        return new JsonCodec<>(createObjectMapper(), listType);
+        return new SmileCodec<>(createObjectMapper(), listType);
     }
 
-    public <T> JsonCodec<List<T>> listJsonCodec(JsonCodec<T> type)
+    public <T> SmileCodec<List<T>> listSmileCodec(SmileCodec<T> type)
     {
         requireNonNull(type, "type is null");
 
@@ -96,10 +83,10 @@ public class JsonCodecFactory
                 .where(new TypeParameter<T>() {}, type.getTypeToken())
                 .getType();
 
-        return new JsonCodec<>(createObjectMapper(), listType);
+        return new SmileCodec<>(createObjectMapper(), listType);
     }
 
-    public <K, V> JsonCodec<Map<K, V>> mapJsonCodec(Class<K> keyType, Class<V> valueType)
+    public <K, V> SmileCodec<Map<K, V>> mapSmileCodec(Class<K> keyType, Class<V> valueType)
     {
         requireNonNull(keyType, "keyType is null");
         requireNonNull(valueType, "valueType is null");
@@ -109,10 +96,10 @@ public class JsonCodecFactory
                 .where(new TypeParameter<V>() {}, valueType)
                 .getType();
 
-        return new JsonCodec<>(createObjectMapper(), mapType);
+        return new SmileCodec<>(createObjectMapper(), mapType);
     }
 
-    public <K, V> JsonCodec<Map<K, V>> mapJsonCodec(Class<K> keyType, JsonCodec<V> valueType)
+    public <K, V> SmileCodec<Map<K, V>> mapSmileCodec(Class<K> keyType, SmileCodec<V> valueType)
     {
         requireNonNull(keyType, "keyType is null");
         requireNonNull(valueType, "valueType is null");
@@ -122,11 +109,11 @@ public class JsonCodecFactory
                 .where(new TypeParameter<V>() {}, valueType.getTypeToken())
                 .getType();
 
-        return new JsonCodec<>(createObjectMapper(), mapType);
+        return new SmileCodec<>(createObjectMapper(), mapType);
     }
 
     private ObjectMapper createObjectMapper()
     {
-        return objectMapperProvider.get().configure(INDENT_OUTPUT, prettyPrint);
+        return objectMapperProvider.get();
     }
 }
