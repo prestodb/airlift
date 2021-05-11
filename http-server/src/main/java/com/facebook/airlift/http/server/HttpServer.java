@@ -18,6 +18,7 @@ package com.facebook.airlift.http.server;
 import com.facebook.airlift.event.client.EventClient;
 import com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
 import com.facebook.airlift.http.utils.jetty.ConcurrentScheduler;
+import com.facebook.airlift.log.Logger;
 import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
 import com.google.common.annotations.VisibleForTesting;
@@ -91,6 +92,8 @@ import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 
 public class HttpServer
 {
+    private static final Logger log = Logger.get(HttpServer.class);
+
     private final Server server;
     private final boolean registerErrorHandler;
     private final DelimitedRequestLog requestLog;
@@ -466,7 +469,8 @@ public class HttpServer
                     }
                 }
             }
-            catch (Exception ignored) {
+            catch (Exception e) {
+                log.error(e, "Error reading certificates");
             }
         });
 
