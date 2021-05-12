@@ -37,6 +37,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
 
 import java.net.URI;
 
@@ -241,6 +242,25 @@ public class TestJaxrsThriftTestingHttpProcessor
         assertEquals(response.getStatusCode(), 404);
     }
 
+    @Test
+    public void testServerErrorResponse()
+    {
+        String errorMessage = "test";
+        Request request = prepareGet()
+                .setHeader(ACCEPT, ThriftRequestUtils.APPLICATION_THRIFT_COMPACT)
+                .setHeader(HttpHeaders.CONTENT_TYPE, ThriftRequestUtils.APPLICATION_THRIFT_COMPACT)
+                .setUri(URI.create("http://fake.invalid/http-thrift/server-error/" + errorMessage))
+                .build();
+        try {
+            ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
+            assertEquals(response.getErrorMessage(), errorMessage);
+            assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR.code());
+        }
+        catch (TestingException e) {
+            fail("exception is not expected");
+        }
+    }
+
     @Path("http-thrift")
     public static class GetPostResource
     {
@@ -268,6 +288,15 @@ public class TestJaxrsThriftTestingHttpProcessor
         public TestThriftMessage fail(@PathParam("message") String errorMessage)
         {
             throw new TestingException(errorMessage);
+        }
+
+        @Path("server-error/{message}")
+        @GET
+        @Consumes({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
+        @Produces({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
+        public Response serverErrorResponse(@PathParam("message") String errorMessage)
+        {
+            return Response.serverError().entity(errorMessage).build();
         }
     }
 

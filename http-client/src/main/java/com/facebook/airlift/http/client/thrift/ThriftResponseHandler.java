@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.validThriftMimeTypes;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.util.Objects.requireNonNull;
-import static org.eclipse.jetty.http.HttpStatus.isClientError;
+import static org.eclipse.jetty.http.HttpStatus.isSuccess;
 
 public class ThriftResponseHandler<T>
         implements ResponseHandler<ThriftResponse<T>, RuntimeException>
@@ -53,7 +53,7 @@ public class ThriftResponseHandler<T>
     @Override
     public ThriftResponse<T> handle(Request request, Response response)
     {
-        if (isClientError(response.getStatusCode())) {
+        if (!isSuccess(response.getStatusCode())) {
             return createErrorResponse(response);
         }
 
