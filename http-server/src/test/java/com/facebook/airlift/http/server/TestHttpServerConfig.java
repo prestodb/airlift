@@ -55,6 +55,7 @@ public class TestHttpServerConfig
                 .setTrustStorePath(null)
                 .setTrustStorePassword(null)
                 .setSslContextRefreshTime(new Duration(1, MINUTES))
+                .setAutomaticHttpsSharedSecret(null)
                 .setLogPath("var/log/http-request.log")
                 .setLogEnabled(true)
                 .setRequestStatsEnabled(true)
@@ -111,6 +112,7 @@ public class TestHttpServerConfig
                 .put("http-server.https.ssl-session-timeout", "7h")
                 .put("http-server.https.ssl-session-cache-size", "456")
                 .put("http-server.https.ssl-context.refresh-time", "10m")
+                .put("http-server.https.automatic-shared-secret", "automatic-secret")
                 .put("http-server.log.path", "/log")
                 .put("http-server.log.enabled", "false")
                 .put("http-server.log.max-size", "1GB")
@@ -164,6 +166,7 @@ public class TestHttpServerConfig
                 .setTrustStorePassword("truststore password")
                 .setSecureRandomAlgorithm("NativePRNG")
                 .setSslContextRefreshTime(new Duration(10, MINUTES))
+                .setAutomaticHttpsSharedSecret("automatic-secret")
                 .setLogPath("/log")
                 .setLogEnabled(false)
                 .setRequestStatsEnabled(false)
@@ -212,7 +215,11 @@ public class TestHttpServerConfig
                         // keystore path not set
                         .setKeystorePassword("keystore password"),
                 "httpsConfigurationValid",
+<<<<<<< HEAD:http-server/src/test/java/com/facebook/airlift/http/server/TestHttpServerConfig.java
                 "Keystore path/password must be provided when HTTPS is enabled",
+=======
+                "Keystore path or automatic HTTPS shared secret must be provided when HTTPS is enabled",
+>>>>>>> 084ca9cfc... Add automatic https configuration:http-server/src/test/java/io/airlift/http/server/TestHttpServerConfig.java
                 AssertTrue.class);
     }
     */
