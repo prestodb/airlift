@@ -328,6 +328,14 @@ public class QuantileDigest
      */
     public List<Long> getQuantilesLowerBound(List<Double> quantiles)
     {
+        if (alpha > 0.0) {
+            long nowInSeconds = TimeUnit.NANOSECONDS.toSeconds(ticker.read());
+            if (nowInSeconds - landmarkInSeconds >= RESCALE_THRESHOLD_SECONDS) {
+                rescale(nowInSeconds);
+                compress(); // rescale affects weights globally, so force compression
+            }
+        }
+
         checkArgument(Ordering.natural().isOrdered(quantiles), "quantiles must be sorted in increasing order");
         for (double quantile : quantiles) {
             checkArgument(quantile >= 0 && quantile <= 1, "quantile must be between [0,1]");
@@ -379,6 +387,14 @@ public class QuantileDigest
      */
     public List<Long> getQuantilesUpperBound(List<Double> quantiles)
     {
+        if (alpha > 0.0) {
+            long nowInSeconds = TimeUnit.NANOSECONDS.toSeconds(ticker.read());
+            if (nowInSeconds - landmarkInSeconds >= RESCALE_THRESHOLD_SECONDS) {
+                rescale(nowInSeconds);
+                compress(); // rescale affects weights globally, so force compression
+            }
+        }
+
         checkArgument(Ordering.natural().isOrdered(quantiles), "quantiles must be sorted in increasing order");
         for (double quantile : quantiles) {
             checkArgument(quantile >= 0 && quantile <= 1, "quantile must be between [0,1]");
@@ -624,7 +640,14 @@ public class QuantileDigest
     {
         double bound = Math.floor(weightedCount / calculateCompressionFactor());
 
+        AtomicLong max = new AtomicLong(Integer.MIN_VALUE);
+        AtomicLong min = new AtomicLong(Integer.MAX_VALUE);
         postOrderTraversal(root, node -> {
+            // If decay is enabled and this node has a non-zero weight, determine if the value is the new max or min
+            if (counts[node] >= ZERO_WEIGHT_THRESHOLD && alpha > 0.0) {
+                max.accumulateAndGet(upperBound(node), Math::max);
+                min.accumulateAndGet(lowerBound(node), Math::min);
+            }
             // if children's weights are 0 remove them and shift the weight to their parent
             int left = lefts[node];
             int right = rights[node];
@@ -655,6 +678,15 @@ public class QuantileDigest
         // root's count may have decayed to ~0
         if (root != -1 && counts[root] < ZERO_WEIGHT_THRESHOLD) {
             root = tryRemove(root);
+            if (root < 0) {
+                this.min = Long.MAX_VALUE;
+                this.max = Long.MIN_VALUE;
+            }
+            // If decay is being used, the min and max values may have decayed as well
+            else if (alpha > 0) {
+                this.min = min.get();
+                this.max = max.get();
+            }
         }
     }
 
