@@ -52,6 +52,7 @@ import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.Scheduler;
+import org.eclipse.jetty.util.thread.ThreadPool;
 import org.weakref.jmx.Managed;
 import org.weakref.jmx.Nested;
 
@@ -573,6 +574,13 @@ public class HttpServer
             return 0;
         }
         return requestLog.getQueueSize();
+    }
+
+    @Managed
+    public int getBusyThreads()
+    {
+        ThreadPool threadPool = server.getThreadPool();
+        return threadPool instanceof QueuedThreadPool ? ((QueuedThreadPool) threadPool).getBusyThreads() : 0;
     }
 
     @PostConstruct
