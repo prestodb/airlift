@@ -99,6 +99,7 @@ public class TestHttpServerProvider
     private File tempDir;
     private NodeInfo nodeInfo;
     private HttpServerConfig config;
+    private HttpsConfig httpsConfig;
     private ClientCertificate clientCertificate;
     private HttpServerInfo httpServerInfo;
 
@@ -115,13 +116,14 @@ public class TestHttpServerProvider
         tempDir = Files.createTempDir().getCanonicalFile(); // getCanonicalFile needed to get around Issue 365 (http://code.google.com/p/guava-libraries/issues/detail?id=365)
         config = new HttpServerConfig()
                 .setHttpPort(0)
-                .setHttpsPort(0)
                 .setLogPath(new File(tempDir, "http-request.log").getAbsolutePath());
+        httpsConfig = new HttpsConfig()
+                .setHttpsPort(0);
         clientCertificate = ClientCertificate.NONE;
         nodeInfo = new NodeInfo(new NodeConfig()
                 .setEnvironment("test")
                 .setNodeInternalAddress("localhost"));
-        httpServerInfo = new HttpServerInfo(config, nodeInfo);
+        httpServerInfo = createHttpServerInfo();
     }
 
     @AfterMethod(alwaysRun = true)
@@ -168,12 +170,11 @@ public class TestHttpServerProvider
 
     @Test
     public void testHttpDisabled()
-            throws Exception
     {
         closeChannels(httpServerInfo);
 
         config.setHttpEnabled(false);
-        httpServerInfo = new HttpServerInfo(config, nodeInfo);
+        httpServerInfo = createHttpServerInfo();
 
         assertNull(httpServerInfo.getHttpUri());
         assertNull(httpServerInfo.getHttpExternalUri());
@@ -193,12 +194,11 @@ public class TestHttpServerProvider
 
     @Test
     public void testAdminDisabled()
-            throws Exception
     {
         closeChannels(httpServerInfo);
 
         config.setAdminEnabled(false);
-        httpServerInfo = new HttpServerInfo(config, nodeInfo);
+        httpServerInfo = createHttpServerInfo();
 
         assertNotNull(httpServerInfo.getHttpUri());
         assertNotNull(httpServerInfo.getHttpExternalUri());
@@ -218,12 +218,11 @@ public class TestHttpServerProvider
 
     @Test
     public void testHttpsEnabled()
-            throws Exception
     {
         closeChannels(httpServerInfo);
 
         config.setHttpsEnabled(true);
-        httpServerInfo = new HttpServerInfo(config, nodeInfo);
+        httpServerInfo = createHttpServerInfo();
 
         assertNotNull(httpServerInfo.getHttpUri());
         assertNotNull(httpServerInfo.getHttpExternalUri());
@@ -277,8 +276,8 @@ public class TestHttpServerProvider
             throws Exception
     {
         config.setHttpEnabled(false)
-                .setHttpsEnabled(true)
-                .setHttpsPort(0)
+                .setHttpsEnabled(true);
+        httpsConfig
                 .setKeystorePath(getResource("test.keystore.with.two.passwords").getPath())
                 .setKeystorePassword("airlift")
                 .setKeyManagerPassword("airliftkey")
@@ -352,9 +351,8 @@ public class TestHttpServerProvider
     {
         config.setHttpEnabled(false)
                 .setAdminEnabled(false)
-                .setHttpsEnabled(true)
-                .setHttpsPort(0)
-                .setKeystorePath(getResource("clientcert-java/server.keystore").getPath())
+                .setHttpsEnabled(true);
+        httpsConfig.setKeystorePath(getResource("clientcert-java/server.keystore").getPath())
                 .setKeystorePassword("airlift")
                 .setAutomaticHttpsSharedSecret("shared-secret");
         clientCertificate = ClientCertificate.REQUIRED;
@@ -388,8 +386,8 @@ public class TestHttpServerProvider
     {
         config.setHttpEnabled(false)
                 .setAdminEnabled(false)
-                .setHttpsEnabled(true)
-                .setHttpsPort(0)
+                .setHttpsEnabled(true);
+        httpsConfig
                 .setKeystorePath(getResource("clientcert-pem/server.pem").getPath())
                 .setKeystorePassword("airlift")
                 .setTrustStorePath(getResource("clientcert-pem/ca.crt").getPath());
@@ -514,10 +512,10 @@ public class TestHttpServerProvider
     {
         config.setHttpEnabled(false)
                 .setHttpsEnabled(true)
-                .setHttpsPort(0)
-                .setKeystorePath(getResource("test.keystore").getPath())
-                .setKeystorePassword("airlift")
                 .setMaxThreads(1);
+        httpsConfig
+                .setKeystorePath(getResource("test.keystore").getPath())
+                .setKeystorePassword("airlift");
         createAndStartServer();
     }
 
@@ -526,8 +524,8 @@ public class TestHttpServerProvider
             throws Exception
     {
         config.setHttpEnabled(false)
-                .setHttpsEnabled(true)
-                .setHttpsPort(0)
+                .setHttpsEnabled(true);
+        httpsConfig
                 .setKeystorePath(getResource("test.keystore.with.two.passwords").getPath())
                 .setKeystorePassword("airlift");
         createAndStartServer();
@@ -538,8 +536,8 @@ public class TestHttpServerProvider
             throws Exception
     {
         config.setHttpEnabled(false)
-                .setHttpsEnabled(true)
-                .setHttpsPort(0)
+                .setHttpsEnabled(true);
+        httpsConfig
                 .setKeystorePath(new File(getResource("test.keystore").toURI()).getAbsolutePath())
                 .setKeystorePassword("airlift");
         createAndStartServer();
@@ -553,8 +551,7 @@ public class TestHttpServerProvider
     public void testNoHttpsDaysUntilCertificateExpiration()
             throws Exception
     {
-        config.setHttpEnabled(true)
-                .setHttpsPort(0);
+        config.setHttpEnabled(true);
         createAndStartServer();
         assertNull(server.getDaysUntilCertificateExpiration());
     }
@@ -573,11 +570,12 @@ public class TestHttpServerProvider
     {
         try (TempFile tempFile = new TempFile()) {
             appendCertificate(tempFile.file(), "certificate-1");
-            config.setSslContextRefreshTime(new Duration(5, SECONDS))
-                    .setKeystorePath(tempFile.file().getAbsolutePath())
-                    .setKeystorePassword("airlift")
-                    .setHttpsEnabled(true)
+            config.setHttpsEnabled(true)
                     .setHttpEnabled(false);
+            httpsConfig
+                    .setSslContextRefreshTime(new Duration(5, SECONDS))
+                    .setKeystorePath(tempFile.file().getAbsolutePath())
+                    .setKeystorePassword("airlift");
             createAndStartServer();
             assertEventually(() -> assertEquals(server.getCertificates().size(), 1));
             appendCertificate(tempFile.file(), "certificate-2");
@@ -595,7 +593,7 @@ public class TestHttpServerProvider
             throws Exception
     {
         closeChannels(httpServerInfo);
-        httpServerInfo = new HttpServerInfo(config, nodeInfo);
+        httpServerInfo = createHttpServerInfo();
         createServer(servlet);
         server.start();
     }
@@ -612,6 +610,7 @@ public class TestHttpServerProvider
                 httpServerInfo,
                 nodeInfo,
                 config,
+                optionalHttpsConfig(),
                 servlet,
                 ImmutableMap.of(),
                 ImmutableSet.of(new DummyFilter()),
@@ -625,6 +624,16 @@ public class TestHttpServerProvider
         serverProvider.setLoginService(loginServiceProvider.get());
         serverProvider.setTokenManager(new TraceTokenManager());
         server = serverProvider.get();
+    }
+
+    private HttpServerInfo createHttpServerInfo()
+    {
+        return new HttpServerInfo(config, optionalHttpsConfig(), nodeInfo);
+    }
+
+    private Optional<HttpsConfig> optionalHttpsConfig()
+    {
+        return config.isHttpsEnabled() ? Optional.of(this.httpsConfig) : Optional.empty();
     }
 
     private static void appendCertificate(File keyStoreFile, String alias)
