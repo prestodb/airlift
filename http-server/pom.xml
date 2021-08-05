@@ -232,4 +232,17 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!-- Following can be removed whenever we update airlift/airbase to recent version -->
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.basepom.maven</groupId>
+                    <artifactId>duplicate-finder-maven-plugin</artifactId>
+                    <version>1.5.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>
