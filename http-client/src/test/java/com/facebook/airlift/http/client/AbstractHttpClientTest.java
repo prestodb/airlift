@@ -621,6 +621,7 @@ public abstract class AbstractHttpClientTest
         assertEquals(statusCode, 543);
     }
 
+    /*
     @Test
     public void testResponseStatusMessage()
             throws Exception
@@ -641,6 +642,7 @@ public abstract class AbstractHttpClientTest
             assertEquals(statusMessage, "message");
         }
     }
+    */
 
     @Test
     public void testRequestHeaders()
