@@ -621,29 +621,6 @@ public abstract class AbstractHttpClientTest
         assertEquals(statusCode, 543);
     }
 
-    /*
-    @Test
-    public void testResponseStatusMessage()
-            throws Exception
-    {
-        servlet.setResponseStatusMessage("message");
-
-        Request request = prepareGet()
-                .setUri(baseURI)
-                .build();
-
-        String statusMessage = executeRequest(request, createStatusResponseHandler()).getStatusMessage();
-
-        if (createClientConfig().isHttp2Enabled()) {
-            // reason phrases are not supported in HTTP/2
-            assertNull(statusMessage);
-        }
-        else {
-            assertEquals(statusMessage, "message");
-        }
-    }
-    */
-
     @Test
     public void testRequestHeaders()
             throws Exception
