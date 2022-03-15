@@ -1,5 +1,8 @@
 package com.facebook.airlift.stats;
 
+import com.facebook.drift.annotations.ThriftConstructor;
+import com.facebook.drift.annotations.ThriftField;
+import com.facebook.drift.annotations.ThriftStruct;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
@@ -195,6 +198,7 @@ public class Distribution
                 getAvg());
     }
 
+    @ThriftStruct
     public static class DistributionSnapshot
     {
         private final double maxError;
@@ -214,6 +218,7 @@ public class Distribution
         private final double avg;
 
         @JsonCreator
+        @ThriftConstructor
         public DistributionSnapshot(
                 @JsonProperty("maxError") double maxError,
                 @JsonProperty("count") double count,
@@ -249,90 +254,105 @@ public class Distribution
         }
 
         @JsonProperty
+        @ThriftField(1)
         public double getMaxError()
         {
             return maxError;
         }
 
         @JsonProperty
+        @ThriftField(2)
         public double getCount()
         {
             return count;
         }
 
         @JsonProperty
+        @ThriftField(3)
         public double getTotal()
         {
             return total;
         }
 
         @JsonProperty
+        @ThriftField(4)
         public long getP01()
         {
             return p01;
         }
 
         @JsonProperty
+        @ThriftField(5)
         public long getP05()
         {
             return p05;
         }
 
         @JsonProperty
+        @ThriftField(6)
         public long getP10()
         {
             return p10;
         }
 
         @JsonProperty
+        @ThriftField(7)
         public long getP25()
         {
             return p25;
         }
 
         @JsonProperty
+        @ThriftField(8)
         public long getP50()
         {
             return p50;
         }
 
         @JsonProperty
+        @ThriftField(9)
         public long getP75()
         {
             return p75;
         }
 
         @JsonProperty
+        @ThriftField(10)
         public long getP90()
         {
             return p90;
         }
 
         @JsonProperty
+        @ThriftField(11)
         public long getP95()
         {
             return p95;
         }
 
         @JsonProperty
+        @ThriftField(12)
         public long getP99()
         {
             return p99;
         }
 
         @JsonProperty
+        @ThriftField(13)
         public long getMin()
         {
             return min;
         }
 
         @JsonProperty
+        @ThriftField(14)
         public long getMax()
         {
             return max;
         }
 
         @JsonProperty
+        @ThriftField(15)
         public double getAvg()
         {
             return avg;
