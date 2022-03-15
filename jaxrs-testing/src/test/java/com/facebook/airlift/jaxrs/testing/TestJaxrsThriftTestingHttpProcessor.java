@@ -29,9 +29,11 @@ import com.facebook.drift.transport.netty.codec.Protocol;
 import com.google.common.net.HttpHeaders;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -46,6 +48,7 @@ import static com.facebook.airlift.http.client.Request.Builder.preparePost;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_BINARY;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_COMPACT;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.APPLICATION_THRIFT_FB_COMPACT;
+import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftDelete;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftGet;
 import static com.facebook.airlift.http.client.thrift.ThriftRequestUtils.prepareThriftPost;
 import static com.facebook.drift.protocol.TType.STOP;
@@ -75,7 +78,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 new TestingHttpClient(
                         new JaxrsTestingHttpProcessor(
                             URI.create("http://fake.invalid/"),
-                            new GetPostResource(),
+                            new Resource(),
                             new ThriftMapper(codecManager),
                             new ParsingExceptionMapper()));
         testThriftMessageThriftCodec = codecManager.getCodec(TestThriftMessage.class);
@@ -91,11 +94,21 @@ public class TestJaxrsThriftTestingHttpProcessor
         testThriftMessageTestThriftResponseHandler = null;
     }
 
-    @Test
-    public void testPostCompact()
+    @DataProvider
+    public Object[][] protocolCombinations()
     {
-        Request request = prepareThriftPost(COMPACT, new TestThriftMessage("xyz", 1), testThriftMessageThriftCodec)
-                .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
+        return new Object[][] {
+                {COMPACT},
+                {BINARY},
+                {FB_COMPACT}
+        };
+    }
+
+    @Test(dataProvider = "protocolCombinations")
+    public void testPost(Protocol protocol)
+    {
+        Request request = prepareThriftPost(protocol, new TestThriftMessage("xyz", 1), testThriftMessageThriftCodec)
+                .setUri(URI.create("http://fake.invalid/http-thrift/2"))
                 .build();
 
         ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
@@ -106,41 +119,11 @@ public class TestJaxrsThriftTestingHttpProcessor
         assertEquals(response.getValue().getTestLong(), 3);
     }
 
-    @Test
-    public void testPostBinary()
+    @Test(dataProvider = "protocolCombinations")
+    public void testGet(Protocol protocol)
     {
-        Request request = prepareThriftPost(BINARY, new TestThriftMessage("xyz", 1), testThriftMessageThriftCodec)
-                .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
-                .build();
-
-        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
-
-        assertEquals(response.getStatusCode(), HttpStatus.OK.code());
-        assertNotNull(response.getValue());
-        assertEquals(response.getValue().getTestString(), "xyz");
-        assertEquals(response.getValue().getTestLong(), 3);
-    }
-
-    @Test
-    public void testPostFBCompact()
-    {
-        Request request = prepareThriftPost(FB_COMPACT, new TestThriftMessage("xyz", 1), testThriftMessageThriftCodec)
-                .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
-                .build();
-
-        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
-
-        assertEquals(response.getStatusCode(), HttpStatus.OK.code());
-        assertNotNull(response.getValue());
-        assertEquals(response.getValue().getTestString(), "xyz");
-        assertEquals(response.getValue().getTestLong(), 3);
-    }
-
-    @Test
-    public void testGetCompact()
-    {
-        Request request = prepareThriftGet(COMPACT)
-                .setUri(URI.create("http://fake.invalid/http-thrift/get/2"))
+        Request request = prepareThriftGet(protocol)
+                .setUri(URI.create("http://fake.invalid/http-thrift/2"))
                 .build();
 
         ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
@@ -151,34 +134,16 @@ public class TestJaxrsThriftTestingHttpProcessor
         assertEquals(response.getValue().getTestLong(), 2);
     }
 
-    @Test
-    public void testGetBinary()
+    @Test(dataProvider = "protocolCombinations")
+    public void testDelete(Protocol protocol)
     {
-        Request request = prepareThriftGet(BINARY)
-                .setUri(URI.create("http://fake.invalid/http-thrift/get/2"))
+        Request request = prepareThriftDelete(protocol)
+                .setUri(URI.create("http://fake.invalid/http-thrift/2"))
                 .build();
 
         ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
 
         assertEquals(response.getStatusCode(), HttpStatus.OK.code());
-        assertNotNull(response.getValue());
-        assertEquals(response.getValue().getTestString(), "abc");
-        assertEquals(response.getValue().getTestLong(), 2);
-    }
-
-    @Test
-    public void testGetFBCompact()
-    {
-        Request request = prepareThriftGet(FB_COMPACT)
-                .setUri(URI.create("http://fake.invalid/http-thrift/get/2"))
-                .build();
-
-        ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
-
-        assertEquals(response.getStatusCode(), HttpStatus.OK.code());
-        assertNotNull(response.getValue());
-        assertEquals(response.getValue().getTestString(), "abc");
-        assertEquals(response.getValue().getTestLong(), 2);
     }
 
     @Test
@@ -188,7 +153,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setHeader(ACCEPT, "application/x-thrift; t=nonbinary")
                 .setHeader(CONTENT_TYPE, "application/x-thrift")
                 .setBodyGenerator(createThriftBodyGenerator(COMPACT))
-                .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
+                .setUri(URI.create("http://fake.invalid/http-thrift/2"))
                 .build();
         ThriftResponse response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
         assertEquals(response.getStatusCode(), HttpStatus.UNSUPPORTED_MEDIA_TYPE.code());
@@ -202,7 +167,7 @@ public class TestJaxrsThriftTestingHttpProcessor
                 .setHeader(HttpHeaders.CONTENT_TYPE, ThriftRequestUtils.APPLICATION_THRIFT_COMPACT)
                 //Setting an invalid request body
                 .setBodyGenerator(out -> out.write(new byte[] {'C', 'A', 'F', 'E', 'B', 'A', 'B', 'E', STOP}))
-                .setUri(URI.create("http://fake.invalid/http-thrift/post/2"))
+                .setUri(URI.create("http://fake.invalid/http-thrift/2"))
                 .build();
 
         ThriftResponse<TestThriftMessage> response = httpClient.execute(request, testThriftMessageTestThriftResponseHandler);
@@ -262,9 +227,9 @@ public class TestJaxrsThriftTestingHttpProcessor
     }
 
     @Path("http-thrift")
-    public static class GetPostResource
+    public static class Resource
     {
-        @Path("get/{id}")
+        @Path("{id}")
         @GET
         @Produces({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
         public TestThriftMessage getTestMessage(@PathParam("id") long id)
@@ -272,13 +237,21 @@ public class TestJaxrsThriftTestingHttpProcessor
             return new TestThriftMessage("abc", id);
         }
 
-        @Path("post/{id}")
+        @Path("{id}")
         @POST
         @Consumes({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
         @Produces({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
         public TestThriftMessage postTestMessage(@PathParam("id") long id, TestThriftMessage testThriftMessage)
         {
             return new TestThriftMessage(testThriftMessage.getTestString(), id + testThriftMessage.getTestLong());
+        }
+
+        @Path("{id}")
+        @DELETE
+        @Produces({APPLICATION_THRIFT_BINARY, APPLICATION_THRIFT_COMPACT, APPLICATION_THRIFT_FB_COMPACT})
+        public Response deleteTestMessage(@PathParam("id") long id)
+        {
+            return Response.status(Response.Status.OK).build();
         }
 
         @Path("fail/{message}")

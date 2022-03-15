@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
+import static com.facebook.airlift.http.client.Request.Builder.prepareDelete;
 import static com.facebook.airlift.http.client.Request.Builder.prepareGet;
 import static com.facebook.airlift.http.client.Request.Builder.preparePost;
 import static com.google.common.net.HttpHeaders.ACCEPT;
@@ -52,6 +53,13 @@ public class ThriftRequestUtils
     {
         String type = getType(protocol);
         return prepareGet()
+                .setHeader(ACCEPT, type);
+    }
+
+    public static Request.Builder prepareThriftDelete(Protocol protocol)
+    {
+        String type = getType(protocol);
+        return prepareDelete()
                 .setHeader(ACCEPT, type);
     }
 
