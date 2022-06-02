@@ -54,9 +54,7 @@ import org.weakref.jmx.Nested;
 import javax.annotation.PreDestroy;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -77,7 +75,6 @@ import java.util.stream.Collectors;
 
 import static com.facebook.airlift.http.client.jetty.AuthorizationPreservingHttpClient.setPreserveAuthorization;
 import static com.facebook.airlift.http.utils.jetty.ConcurrentScheduler.createConcurrentScheduler;
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -359,26 +356,28 @@ public class JettyHttpClient
     {
         SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
         sslContextFactory.setEndpointIdentificationAlgorithm("HTTPS");
-
-        String keyStorePassword = firstNonNull(config.getKeyStorePassword(), "");
-        KeyStore keyStore = null;
         if (config.getKeyStorePath() != null) {
-            keyStore = loadKeyStore(config.getKeyStorePath(), config.getKeyStorePassword());
-            sslContextFactory.setKeyStore(keyStore);
-            sslContextFactory.setKeyStorePassword(keyStorePassword);
+            Optional<KeyStore> pemKeyStore = tryLoadPemKeyStore(config);
+            if (pemKeyStore.isPresent()) {
+                sslContextFactory.setKeyStore(pemKeyStore.get());
+                sslContextFactory.setKeyStorePassword("");
+            }
+            else {
+                sslContextFactory.setKeyStorePath(config.getKeyStorePath());
+                sslContextFactory.setKeyStorePassword(config.getKeyStorePassword());
+            }
         }
-
         if (config.getTrustStorePath() != null) {
-            KeyStore trustStore = loadTrustStore(config.getTrustStorePath(), config.getTrustStorePassword());
-            sslContextFactory.setTrustStore(trustStore);
-            sslContextFactory.setTrustStorePassword("");
+            Optional<KeyStore> pemTrustStore = tryLoadPemTrustStore(config);
+            if (pemTrustStore.isPresent()) {
+                sslContextFactory.setTrustStore(pemTrustStore.get());
+                sslContextFactory.setTrustStorePassword("");
+            }
+            else {
+                sslContextFactory.setTrustStorePath(config.getTrustStorePath());
+                sslContextFactory.setTrustStorePassword(config.getTrustStorePassword());
+            }
         }
-        else if (keyStore != null) {
-            // Backwards compatibility for with Jetty's internal behavior
-            sslContextFactory.setTrustStore(keyStore);
-            sslContextFactory.setTrustStorePassword(keyStorePassword);
-        }
-
         sslContextFactory.setSecureRandomAlgorithm(config.getSecureRandomAlgorithm());
         List<String> includedCipherSuites = config.getHttpsIncludedCipherSuites();
         List<String> excludedCipherSuites = config.getHttpsExcludedCipherSuites();
@@ -388,59 +387,46 @@ public class JettyHttpClient
         return sslContextFactory;
     }
 
-    private static KeyStore loadKeyStore(String keystorePath, String keystorePassword)
+    private static Optional<KeyStore> tryLoadPemKeyStore(HttpClientConfig config)
     {
-        requireNonNull(keystorePath, "keystorePath is null");
+        File keyStoreFile = new File(config.getKeyStorePath());
         try {
-            File keyStoreFile = new File(keystorePath);
-            if (PemReader.isPem(keyStoreFile)) {
-                return PemReader.loadKeyStore(keyStoreFile, keyStoreFile, Optional.ofNullable(keystorePassword), true);
+            if (!PemReader.isPem(keyStoreFile)) {
+                return Optional.empty();
             }
         }
-        catch (IOException | GeneralSecurityException e) {
-            throw new IllegalArgumentException("Error loading PEM key store: " + keystorePath, e);
+        catch (IOException e) {
+            throw new IllegalArgumentException("Error reading key store file: " + keyStoreFile, e);
         }
 
-        try (InputStream in = new FileInputStream(keystorePath)) {
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(in, keystorePassword.toCharArray());
-            return keyStore;
+        try {
+            return Optional.of(PemReader.loadKeyStore(keyStoreFile, keyStoreFile, Optional.ofNullable(config.getKeyStorePassword())));
         }
         catch (IOException | GeneralSecurityException e) {
-            throw new IllegalArgumentException("Error loading Java key store: " + keystorePath, e);
+            throw new IllegalArgumentException("Error loading PEM key store: " + keyStoreFile, e);
         }
     }
 
-    private static KeyStore loadTrustStore(String truststorePath, String truststorePassword)
+    private static Optional<KeyStore> tryLoadPemTrustStore(HttpClientConfig config)
     {
-        if (truststorePath == null) {
-            try {
-                KeyStore keyStore = KeyStore.getInstance("JKS");
-                keyStore.load(null, new char[0]);
-                return keyStore;
+        File trustStoreFile = new File(config.getTrustStorePath());
+        try {
+            if (!PemReader.isPem(trustStoreFile)) {
+                return Optional.empty();
             }
-            catch (GeneralSecurityException | IOException e) {
-                throw new RuntimeException(e);
-            }
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException("Error reading trust store file: " + trustStoreFile, e);
         }
 
         try {
-            File keyStoreFile = new File(truststorePath);
-            if (PemReader.isPem(keyStoreFile)) {
-                return PemReader.loadTrustStore(keyStoreFile);
+            if (PemReader.readCertificateChain(trustStoreFile).isEmpty()) {
+                throw new IllegalArgumentException("PEM trust store file does not contain any certificates: " + trustStoreFile);
             }
+            return Optional.of(PemReader.loadTrustStore(trustStoreFile));
         }
         catch (IOException | GeneralSecurityException e) {
-            throw new IllegalArgumentException("Error loading PEM trust store: " + truststorePath, e);
-        }
-
-        try (InputStream in = new FileInputStream(truststorePath)) {
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(in, truststorePassword == null ? null : truststorePassword.toCharArray());
-            return keyStore;
-        }
-        catch (IOException | GeneralSecurityException e) {
-            throw new IllegalArgumentException("Error loading Java trust store: " + truststorePath, e);
+            throw new IllegalArgumentException("Error loading PEM trust store: " + trustStoreFile, e);
         }
     }
 

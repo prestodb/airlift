@@ -126,12 +126,6 @@ public final class PemReader
     public static KeyStore loadKeyStore(File certificateChainFile, File privateKeyFile, Optional<String> keyPassword)
             throws IOException, GeneralSecurityException
     {
-        return loadKeyStore(certificateChainFile, privateKeyFile, keyPassword, false);
-    }
-
-    public static KeyStore loadKeyStore(File certificateChainFile, File privateKeyFile, Optional<String> keyPassword, boolean storeKeyWithPassword)
-            throws IOException, GeneralSecurityException
-    {
         PrivateKey key = loadPrivateKey(privateKeyFile, keyPassword);
 
         List<X509Certificate> certificateChain = readCertificateChain(certificateChainFile);
@@ -159,8 +153,7 @@ public final class PemReader
             throw new KeyStoreException("Private key does not match the public key of any certificate");
         }
 
-        char[] password = keyPassword.filter(value -> storeKeyWithPassword).orElse("").toCharArray();
-        keyStore.setKeyEntry("key", key, password, certificates);
+        keyStore.setKeyEntry("key", key, new char[0], certificates);
         return keyStore;
     }
 
