@@ -3,8 +3,6 @@ package com.facebook.airlift.http.server;
 import com.facebook.airlift.http.server.HttpServer.ClientCertificate;
 import com.facebook.airlift.log.Logger;
 import com.facebook.airlift.security.pem.PemReader;
-import com.google.common.hash.HashCode;
-import com.google.common.io.Files;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.File;
@@ -13,12 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.hash.Hashing.sha256;
 import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -33,11 +29,11 @@ final class ReloadableSslContextFactoryProvider
 
     private final SslContextFactory.Server sslContextFactory;
 
-    private final Optional<FileWatch> keystoreFile;
+    private final String keystorePath;
     private final String keystorePassword;
     private final String keyManagerPassword;
 
-    private final Optional<FileWatch> trustStoreFile;
+    private final String trustStorePath;
     private final String trustStorePassword;
 
     public ReloadableSslContextFactoryProvider(HttpServerConfig config, ScheduledExecutorService scheduledExecutor, ClientCertificate clientCertificate)
@@ -45,11 +41,11 @@ final class ReloadableSslContextFactoryProvider
         requireNonNull(config, "config is null");
         requireNonNull(scheduledExecutor, "scheduledExecutor is null");
 
-        keystoreFile = Optional.ofNullable(config.getKeystorePath()).map(File::new).map(FileWatch::new);
+        keystorePath = config.getKeystorePath();
         keystorePassword = config.getKeystorePassword();
         keyManagerPassword = config.getKeyManagerPassword();
 
-        trustStoreFile = Optional.ofNullable(config.getTrustStorePath()).map(File::new).map(FileWatch::new);
+        trustStorePath = config.getTrustStorePath();
         trustStorePassword = config.getTrustStorePassword();
 
         sslContextFactory = new SslContextFactory.Server();
@@ -79,12 +75,12 @@ final class ReloadableSslContextFactoryProvider
 
     private void loadContextFactory(SslContextFactory.Server sslContextFactory)
     {
-        KeyStore keyStore = loadKeyStore(keystoreFile.map(FileWatch::getFile), keystorePassword, keyManagerPassword);
+        KeyStore keyStore = loadKeyStore(keystorePath, keystorePassword, keyManagerPassword);
         sslContextFactory.setKeyStore(keyStore);
         sslContextFactory.setKeyStorePassword(firstNonNullOrEmpty(keyManagerPassword, keystorePassword));
 
-        if (trustStoreFile.isPresent()) {
-            sslContextFactory.setTrustStore(loadTrustStore(trustStoreFile.get().getFile(), trustStorePassword));
+        if (trustStorePath != null) {
+            sslContextFactory.setTrustStore(loadTrustStore(trustStorePath, trustStorePassword));
             sslContextFactory.setTrustStorePassword("");
         }
         else {
@@ -94,9 +90,9 @@ final class ReloadableSslContextFactoryProvider
         }
     }
 
-    private static KeyStore loadKeyStore(Optional<File> keystoreFile, String keystorePassword, String keyManagerPassword)
+    private static KeyStore loadKeyStore(String keystorePath, String keystorePassword, String keyManagerPassword)
     {
-        if (!keystoreFile.isPresent()) {
+        if (keystorePath == null) {
             try {
                 KeyStore keyStore = KeyStore.getInstance("JKS");
                 keyStore.load(null, new char[0]);
@@ -107,45 +103,46 @@ final class ReloadableSslContextFactoryProvider
             }
         }
 
-        File file = keystoreFile.get();
         try {
-            if (PemReader.isPem(file)) {
+            File keyStoreFile = new File(keystorePath);
+            if (PemReader.isPem(keyStoreFile)) {
                 checkArgument(keyManagerPassword == null, "key manager password is not allowed with a PEM keystore");
-                return PemReader.loadKeyStore(file, file, Optional.ofNullable(keystorePassword), true);
+                return PemReader.loadKeyStore(keyStoreFile, keyStoreFile, Optional.ofNullable(keystorePassword), true);
             }
         }
         catch (IOException | GeneralSecurityException e) {
-            throw new IllegalArgumentException("Error loading PEM key store: " + file, e);
+            throw new IllegalArgumentException("Error loading PEM key store: " + keystorePath, e);
         }
 
-        try (InputStream in = new FileInputStream(file)) {
+        try (InputStream in = new FileInputStream(keystorePath)) {
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(in, keystorePassword.toCharArray());
             return keyStore;
         }
         catch (IOException | GeneralSecurityException e) {
-            throw new IllegalArgumentException("Error loading Java key store: " + file, e);
+            throw new IllegalArgumentException("Error loading Java key store: " + keystorePath, e);
         }
     }
 
-    private static KeyStore loadTrustStore(File truststoreFile, String truststorePassword)
+    private static KeyStore loadTrustStore(String truststorePath, String truststorePassword)
     {
         try {
-            if (PemReader.isPem(truststoreFile)) {
-                return PemReader.loadTrustStore(truststoreFile);
+            File keyStoreFile = new File(truststorePath);
+            if (PemReader.isPem(keyStoreFile)) {
+                return PemReader.loadTrustStore(keyStoreFile);
             }
         }
         catch (IOException | GeneralSecurityException e) {
-            throw new IllegalArgumentException("Error loading PEM trust store: " + truststoreFile, e);
+            throw new IllegalArgumentException("Error loading PEM trust store: " + truststorePath, e);
         }
 
-        try (InputStream in = new FileInputStream(truststoreFile)) {
+        try (InputStream in = new FileInputStream(truststorePath)) {
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(in, truststorePassword == null ? null : truststorePassword.toCharArray());
             return keyStore;
         }
         catch (IOException | GeneralSecurityException e) {
-            throw new IllegalArgumentException("Error loading Java trust store: " + truststoreFile, e);
+            throw new IllegalArgumentException("Error loading Java trust store: " + truststorePath, e);
         }
     }
 
@@ -160,9 +157,7 @@ final class ReloadableSslContextFactoryProvider
     private synchronized void reload()
     {
         try {
-            if (keystoreFile.map(FileWatch::updateState).orElse(false) || trustStoreFile.map(FileWatch::updateState).orElse(false)) {
-                sslContextFactory.reload(sslContextFactory -> loadContextFactory((SslContextFactory.Server) sslContextFactory));
-            }
+            sslContextFactory.reload(sslContextFactory -> loadContextFactory((SslContextFactory.Server) sslContextFactory));
         }
         catch (Exception e) {
             log.warn(e, "Unable to reload SslContext.");
@@ -178,57 +173,5 @@ final class ReloadableSslContextFactoryProvider
             return second;
         }
         return "";
-    }
-
-    private static class FileWatch
-    {
-        private final File file;
-        private long lastModified = -1;
-        private long length = -1;
-        private HashCode hashCode = sha256().hashBytes(new byte[0]);
-
-        public FileWatch(File file)
-        {
-            this.file = requireNonNull(file, "file is null");
-        }
-
-        public File getFile()
-        {
-            return file;
-        }
-
-        public boolean updateState()
-        {
-            try {
-                // only check contents if length or modified time changed
-                long newLastModified = file.lastModified();
-                long newLength = file.length();
-                if (lastModified == newLastModified && length == newLength) {
-                    return false;
-                }
-
-                // update stats
-                lastModified = newLastModified;
-                length = newLength;
-
-                // check if contents changed
-                HashCode newHashCode = Files.asByteSource(file).hash(sha256());
-                if (Objects.equals(hashCode, newHashCode)) {
-                    return false;
-                }
-                hashCode = newHashCode;
-                return true;
-            }
-            catch (IOException e) {
-                // assume the file changed
-                return true;
-            }
-        }
-
-        @Override
-        public String toString()
-        {
-            return file.toString();
-        }
     }
 }
