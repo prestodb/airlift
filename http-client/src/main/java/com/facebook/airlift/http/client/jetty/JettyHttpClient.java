@@ -359,7 +359,6 @@ public class JettyHttpClient
     {
         SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
         sslContextFactory.setEndpointIdentificationAlgorithm("HTTPS");
-        sslContextFactory.setSNIProvider(SslContextFactory.Client.SniProvider.NON_DOMAIN_SNI_PROVIDER);
 
         String keyStorePassword = firstNonNull(config.getKeyStorePassword(), "");
         KeyStore keyStore = null;

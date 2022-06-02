@@ -140,8 +140,7 @@ public abstract class AbstractHttpClientTest
         if (keystore != null) {
             httpConfiguration.addCustomizer(new SecureRequestCustomizer());
 
-            SslContextFactory sslContextFactory = new SslContextFactory.Client();
-            sslContextFactory.setKeyStorePath(keystore);
+            SslContextFactory sslContextFactory = new SslContextFactory(keystore);
             sslContextFactory.setKeyStorePassword("changeit");
             SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
 
