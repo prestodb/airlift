@@ -15,7 +15,6 @@
  */
 package com.facebook.airlift.http.server.testing;
 
-import com.facebook.airlift.configuration.AbstractConfigurationAwareModule;
 import com.facebook.airlift.discovery.client.AnnouncementHttpServerInfo;
 import com.facebook.airlift.http.server.AuthenticationFilter;
 import com.facebook.airlift.http.server.Authenticator;
@@ -23,12 +22,12 @@ import com.facebook.airlift.http.server.Authorizer;
 import com.facebook.airlift.http.server.HttpServer;
 import com.facebook.airlift.http.server.HttpServerConfig;
 import com.facebook.airlift.http.server.HttpServerInfo;
-import com.facebook.airlift.http.server.HttpsConfig;
 import com.facebook.airlift.http.server.LocalAnnouncementHttpServerInfo;
 import com.facebook.airlift.http.server.TheServlet;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
 import com.google.inject.Key;
+import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
@@ -38,7 +37,6 @@ import javax.servlet.Servlet;
 import java.util.List;
 import java.util.Set;
 
-import static com.facebook.airlift.configuration.ConditionalModule.installModuleIf;
 import static com.facebook.airlift.configuration.ConfigBinder.configBinder;
 import static com.facebook.airlift.http.server.HttpServerBinder.HttpResourceBinding;
 import static com.google.inject.multibindings.MapBinder.newMapBinder;
@@ -46,7 +44,7 @@ import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 
 public class TestingHttpServerModule
-        extends AbstractConfigurationAwareModule
+        implements Module
 {
     private final int httpPort;
 
@@ -61,12 +59,17 @@ public class TestingHttpServerModule
     }
 
     @Override
-    protected void setup(Binder binder)
+    public void configure(Binder binder)
     {
         binder.disableCircularProxies();
 
         configBinder(binder).bindConfig(HttpServerConfig.class);
-        configBinder(binder).bindConfigDefaults(HttpServerConfig.class, config -> config.setHttpPort(httpPort));
+        configBinder(binder).bindConfigDefaults(HttpServerConfig.class, config -> {
+            config.setHttpPort(httpPort);
+            if (httpPort == 0) {
+                config.setHttpsPort(0);
+            }
+        });
 
         binder.bind(HttpServerInfo.class).in(Scopes.SINGLETON);
         binder.bind(TestingHttpServer.class).in(Scopes.SINGLETON);
@@ -79,15 +82,6 @@ public class TestingHttpServerModule
                 .to(AuthenticationFilter.class).in(Scopes.SINGLETON);
         newSetBinder(binder, Authenticator.class);
         newOptionalBinder(binder, Authorizer.class);
-        newOptionalBinder(binder, HttpsConfig.class);
-        install(installModuleIf(HttpServerConfig.class, HttpServerConfig::isHttpsEnabled, moduleBinder -> {
-            configBinder(moduleBinder).bindConfig(HttpsConfig.class);
-            configBinder(moduleBinder).bindConfigDefaults(HttpsConfig.class, config -> {
-                if (httpPort == 0) {
-                    config.setHttpsPort(0);
-                }
-            });
-        }));
     }
 
     @Provides

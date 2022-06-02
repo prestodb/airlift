@@ -13,6 +13,10 @@ package com.facebook.airlift.http.server;
  * limitations under the License.
  */
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Closer;
 import com.facebook.airlift.event.client.NullEventClient;
 import com.facebook.airlift.http.client.HttpClientConfig;
 import com.facebook.airlift.http.client.StatusResponseHandler.StatusResponse;
@@ -21,10 +25,6 @@ import com.facebook.airlift.http.server.HttpServer.ClientCertificate;
 import com.facebook.airlift.node.NodeConfig;
 import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Closer;
 import org.testng.annotations.Test;
 
 import javax.servlet.http.HttpServlet;
@@ -37,9 +37,9 @@ import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.Optional;
 
+import static com.google.common.io.Resources.getResource;
 import static com.facebook.airlift.http.client.Request.Builder.prepareGet;
 import static com.facebook.airlift.http.client.StatusResponseHandler.createStatusResponseHandler;
-import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -65,8 +65,7 @@ public class TestJettyMultipleCerts
         HttpServerConfig config = new HttpServerConfig()
                 .setHttpEnabled(false)
                 .setHttpPort(0)
-                .setHttpsEnabled(true);
-        HttpsConfig httpsConfig = new HttpsConfig()
+                .setHttpsEnabled(true)
                 .setHttpsPort(0)
                 .setKeystorePath(getResource("multiple-certs/server.p12").getPath())
                 .setKeystorePassword("airlift");
@@ -76,12 +75,11 @@ public class TestJettyMultipleCerts
                 .setEnvironment("test")
                 .setNodeInternalAddress("localhost"));
 
-        HttpServerInfo httpServerInfo = new HttpServerInfo(config, Optional.of(httpsConfig), nodeInfo);
+        HttpServerInfo httpServerInfo = new HttpServerInfo(config, nodeInfo);
         HttpServerProvider serverProvider = new HttpServerProvider(
                 httpServerInfo,
                 nodeInfo,
                 config,
-                Optional.of(httpsConfig),
                 servlet,
                 ImmutableMap.of(),
                 ImmutableSet.of(new DummyFilter()),

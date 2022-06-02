@@ -79,13 +79,12 @@ public class TestHttpServerCipher
     public void testIncludeCipherEmpty()
             throws Exception
     {
-        HttpServerConfig config = createHttpServerConfig();
-        HttpsConfig httpsConfig = createHttpsConfig()
+        HttpServerConfig config = createHttpServerConfig()
                 .setHttpsExcludedCipherSuites("")
                 .setHttpsIncludedCipherSuites(" ,   ");
         NodeInfo nodeInfo = new NodeInfo("test");
-        HttpServerInfo httpServerInfo = new HttpServerInfo(config, Optional.of(httpsConfig), nodeInfo);
-        HttpServer server = createServer(nodeInfo, httpServerInfo, config, httpsConfig);
+        HttpServerInfo httpServerInfo = new HttpServerInfo(config, nodeInfo);
+        HttpServer server = createServer(nodeInfo, httpServerInfo, config);
         try {
             server.start();
             URI httpsUri = httpServerInfo.getHttpsUri();
@@ -108,13 +107,12 @@ public class TestHttpServerCipher
     public void testIncludedCipher()
             throws Exception
     {
-        HttpServerConfig config = createHttpServerConfig();
-        HttpsConfig httpsConfig = createHttpsConfig()
+        HttpServerConfig config = createHttpServerConfig()
                 .setHttpsExcludedCipherSuites("")
                 .setHttpsIncludedCipherSuites(CIPHER_1 + "," + CIPHER_2);
         NodeInfo nodeInfo = new NodeInfo("test");
-        HttpServerInfo httpServerInfo = new HttpServerInfo(config, Optional.of(httpsConfig), nodeInfo);
-        HttpServer server = createServer(nodeInfo, httpServerInfo, config, httpsConfig);
+        HttpServerInfo httpServerInfo = new HttpServerInfo(config, nodeInfo);
+        HttpServer server = createServer(nodeInfo, httpServerInfo, config);
         try {
             server.start();
             URI httpsUri = httpServerInfo.getHttpsUri();
@@ -145,12 +143,11 @@ public class TestHttpServerCipher
     public void testExcludedCipher()
             throws Exception
     {
-        HttpServerConfig config = createHttpServerConfig();
-        HttpsConfig httpsConfig = createHttpsConfig()
+        HttpServerConfig config = createHttpServerConfig()
                 .setHttpsExcludedCipherSuites(CIPHER_1 + "," + CIPHER_2);
         NodeInfo nodeInfo = new NodeInfo("test");
-        HttpServerInfo httpServerInfo = new HttpServerInfo(config, Optional.of(httpsConfig), nodeInfo);
-        HttpServer server = createServer(nodeInfo, httpServerInfo, config, httpsConfig);
+        HttpServerInfo httpServerInfo = new HttpServerInfo(config, nodeInfo);
+        HttpServer server = createServer(nodeInfo, httpServerInfo, config);
 
         try {
             server.start();
@@ -179,15 +176,10 @@ public class TestHttpServerCipher
         return new HttpServerConfig()
                 .setHttpEnabled(false)
                 .setHttpsEnabled(true)
-                .setLogPath(new File(tempDir, "http-request.log").getAbsolutePath());
-    }
-
-    private static HttpsConfig createHttpsConfig()
-    {
-        return new HttpsConfig()
                 .setHttpsPort(0)
                 .setKeystorePath(KEY_STORE_PATH)
-                .setKeystorePassword(KEY_STORE_PASSWORD);
+                .setKeystorePassword(KEY_STORE_PASSWORD)
+                .setLogPath(new File(tempDir, "http-request.log").getAbsolutePath());
     }
 
     private static HttpClient createClientIncludeCiphers(String... includedCipherSuites)
@@ -205,19 +197,18 @@ public class TestHttpServerCipher
         return httpClient;
     }
 
-    private static HttpServer createServer(NodeInfo nodeInfo, HttpServerInfo httpServerInfo, HttpServerConfig config, HttpsConfig httpsConfig)
+    private static HttpServer createServer(NodeInfo nodeInfo, HttpServerInfo httpServerInfo, HttpServerConfig config)
     {
-        return createServer(new DummyServlet(), nodeInfo, httpServerInfo, config, httpsConfig);
+        return createServer(new DummyServlet(), nodeInfo, httpServerInfo, config);
     }
 
-    private static HttpServer createServer(HttpServlet servlet, NodeInfo nodeInfo, HttpServerInfo httpServerInfo, HttpServerConfig config, HttpsConfig httpsConfig)
+    private static HttpServer createServer(HttpServlet servlet, NodeInfo nodeInfo, HttpServerInfo httpServerInfo, HttpServerConfig config)
     {
         HashLoginServiceProvider loginServiceProvider = new HashLoginServiceProvider(config);
         HttpServerProvider serverProvider = new HttpServerProvider(
                 httpServerInfo,
                 nodeInfo,
                 config,
-                Optional.of(httpsConfig),
                 servlet,
                 ImmutableMap.of(),
                 ImmutableSet.of(new DummyFilter()),

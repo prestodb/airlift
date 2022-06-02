@@ -27,9 +27,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 
 public class HttpServerInfo
@@ -45,13 +43,8 @@ public class HttpServerInfo
     private final ServerSocketChannel httpsChannel;
     private final ServerSocketChannel adminChannel;
 
-    public HttpServerInfo(HttpServerConfig config, NodeInfo nodeInfo)
-    {
-        this(config, Optional.empty(), nodeInfo);
-    }
-
     @Inject
-    public HttpServerInfo(HttpServerConfig config, Optional<HttpsConfig> httpsConfig, NodeInfo nodeInfo)
+    public HttpServerInfo(HttpServerConfig config, NodeInfo nodeInfo)
     {
         if (config.isHttpEnabled()) {
             httpChannel = createChannel(nodeInfo.getBindIp(), config.getHttpPort(), config.getHttpAcceptQueueSize());
@@ -65,8 +58,7 @@ public class HttpServerInfo
         }
 
         if (config.isHttpsEnabled()) {
-            checkArgument(httpsConfig.isPresent(), "httpsConfig must be present when HTTPS is enabled");
-            httpsChannel = createChannel(nodeInfo.getBindIp(), httpsConfig.get().getHttpsPort(), config.getHttpAcceptQueueSize());
+            httpsChannel = createChannel(nodeInfo.getBindIp(), config.getHttpsPort(), config.getHttpAcceptQueueSize());
             httpsUri = buildUri("https", nodeInfo.getInternalAddress(), port(httpsChannel));
             httpsExternalUri = buildUri("https", nodeInfo.getExternalAddress(), httpsUri.getPort());
         }
