@@ -29,7 +29,6 @@ import com.facebook.airlift.node.NodeConfig;
 import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.testing.TempFile;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
@@ -281,30 +280,21 @@ public class TestHttpServerProvider
                 .setHttpsPort(0)
                 .setKeystorePath(getResource("test.keystore.with.two.passwords").getPath())
                 .setKeystorePassword("airlift")
-                .setKeyManagerPassword("airliftkey")
-                .setAutomaticHttpsSharedSecret("shared-secret");
+                .setKeyManagerPassword("airliftkey");
 
         createAndStartServer();
 
         HttpClientConfig http1ClientConfig = new HttpClientConfig()
                 .setHttp2Enabled(false)
                 .setTrustStorePath(getResource("test.truststore").getPath())
-                .setTrustStorePassword("airlift")
-                .setAutomaticHttpsSharedSecret("shared-secret")
-                .setNodeEnvironment("test");
+                .setTrustStorePassword("airlift");
 
         try (JettyHttpClient httpClient = new JettyHttpClient(http1ClientConfig)) {
-            verifyUri(httpClient, URI.create("https://localhost:" + httpServerInfo.getHttpsUri().getPort()));
-            verifyUri(httpClient, URI.create("https://127.0.0.1:" + httpServerInfo.getHttpsUri().getPort()));
+            StatusResponse response = httpClient.execute(prepareGet().setUri(httpServerInfo.getHttpsUri()).build(), createStatusResponseHandler());
+
+            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(response.getHeader("X-Protocol"), "HTTP/1.1");
         }
-    }
-
-    private void verifyUri(JettyHttpClient httpClient, URI uri)
-    {
-        StatusResponse response = httpClient.execute(prepareGet().setUri(uri).build(), createStatusResponseHandler());
-
-        assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
-        assertEquals(response.getHeader("X-Protocol"), "HTTP/1.1");
     }
 
     @Test
@@ -355,8 +345,7 @@ public class TestHttpServerProvider
                 .setHttpsEnabled(true)
                 .setHttpsPort(0)
                 .setKeystorePath(getResource("clientcert-java/server.keystore").getPath())
-                .setKeystorePassword("airlift")
-                .setAutomaticHttpsSharedSecret("shared-secret");
+                .setKeystorePassword("airlift");
         clientCertificate = ClientCertificate.REQUIRED;
 
         createAndStartServer(createCertTestServlet());
@@ -365,20 +354,15 @@ public class TestHttpServerProvider
                 .setKeyStorePath(getResource("clientcert-java/client.keystore").getPath())
                 .setKeyStorePassword("airlift")
                 .setTrustStorePath(getResource("clientcert-java/client.truststore").getPath())
-                .setTrustStorePassword("airlift")
-                .setAutomaticHttpsSharedSecret("shared-secret")
-                .setNodeEnvironment("test");
+                .setTrustStorePassword("airlift");
 
         try (JettyHttpClient httpClient = new JettyHttpClient(clientConfig)) {
-            for (String host : ImmutableList.of("localhost", "127.0.0.1")) {
-                URI uri = URI.create("https://" + host + ":" + httpServerInfo.getHttpsUri().getPort());
-                StringResponse response = httpClient.execute(
-                        prepareGet().setUri(uri).build(),
-                        createStringResponseHandler());
+            StringResponse response = httpClient.execute(
+                    prepareGet().setUri(httpServerInfo.getHttpsUri()).build(),
+                    createStringResponseHandler());
 
-                assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
-                assertEquals(response.getBody(), "CN=testing,OU=Client,O=Airlift,L=Palo Alto,ST=CA,C=US");
-            }
+            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(response.getBody(), "CN=testing,OU=Client,O=Airlift,L=Palo Alto,ST=CA,C=US");
         }
     }
 

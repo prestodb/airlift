@@ -229,7 +229,7 @@ public class HttpServer
             HttpConfiguration httpsConfiguration = new HttpConfiguration(baseHttpConfiguration);
             httpsConfiguration.addCustomizer(new SecureRequestCustomizer());
 
-            this.sslContextFactory = Optional.of(this.sslContextFactory.orElseGet(() -> createReloadingSslContextFactory(config, clientCertificate, nodeInfo.getEnvironment())));
+            this.sslContextFactory = Optional.of(this.sslContextFactory.orElseGet(() -> createReloadingSslContextFactory(config, clientCertificate)));
             SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory.get(), "http/1.1");
 
             Integer acceptors = config.getHttpsAcceptorThreads();
@@ -274,7 +274,7 @@ public class HttpServer
             if (config.isHttpsEnabled()) {
                 adminConfiguration.addCustomizer(new SecureRequestCustomizer());
 
-                this.sslContextFactory = Optional.of(this.sslContextFactory.orElseGet(() -> createReloadingSslContextFactory(config, clientCertificate, nodeInfo.getEnvironment())));
+                this.sslContextFactory = Optional.of(this.sslContextFactory.orElseGet(() -> createReloadingSslContextFactory(config, clientCertificate)));
                 SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory.get(), "http/1.1");
                 adminConnector = createServerConnector(
                         httpServerInfo.getAdminChannel(),
@@ -551,13 +551,13 @@ public class HttpServer
         server.join();
     }
 
-    private SslContextFactory.Server createReloadingSslContextFactory(HttpServerConfig config, ClientCertificate clientCertificate, String environment)
+    private SslContextFactory.Server createReloadingSslContextFactory(HttpServerConfig config, ClientCertificate clientCertificate)
     {
         if (scheduledExecutorService == null) {
             scheduledExecutorService = newSingleThreadScheduledExecutor(daemonThreadsNamed("HttpServerScheduler"));
         }
 
-        return new ReloadableSslContextFactoryProvider(config, scheduledExecutorService, clientCertificate, environment).getSslContextFactory();
+        return new ReloadableSslContextFactoryProvider(config, scheduledExecutorService, clientCertificate).getSslContextFactory();
     }
 
     private static ServerConnector createServerConnector(
