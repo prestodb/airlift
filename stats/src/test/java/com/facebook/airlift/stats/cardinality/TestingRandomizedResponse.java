@@ -13,23 +13,19 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-enum Format
+/**
+ * More like UN-randomized response. This one won't flip any bits!
+ */
+public class TestingRandomizedResponse
+        implements RandomizedResponseStrategy
 {
-    SPARSE_V1(0),
-    DENSE_V1(1),
-    SPARSE_V2(2),
-    DENSE_V2(3),
-    PRIVATE_LPCA_V1(4);
-
-    private byte tag;
-
-    Format(int tag)
+    public double effectiveProbability(double flipProbability)
     {
-        this.tag = (byte) tag;
+        return 0.0;
     }
 
-    public byte getTag()
+    public boolean shouldFlip(double flipProbability)
     {
-        return tag;
+        return false;
     }
 }

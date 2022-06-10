@@ -13,23 +13,25 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-enum Format
+import java.security.SecureRandom;
+
+public class SecureRandomizedResponse
+        implements RandomizedResponseStrategy
 {
-    SPARSE_V1(0),
-    DENSE_V1(1),
-    SPARSE_V2(2),
-    DENSE_V2(3),
-    PRIVATE_LPCA_V1(4);
+    private final SecureRandom random;
 
-    private byte tag;
-
-    Format(int tag)
+    public SecureRandomizedResponse()
     {
-        this.tag = (byte) tag;
+        this.random = new SecureRandom();
     }
 
-    public byte getTag()
+    public double effectiveProbability(double flipProbability)
     {
-        return tag;
+        return flipProbability;
+    }
+
+    public boolean shouldFlip(double flipProbability)
+    {
+        return random.nextDouble() <= flipProbability;
     }
 }

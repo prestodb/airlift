@@ -343,6 +343,13 @@ final class DenseHll
         return this;
     }
 
+    public void eachBucket(BucketListener listener)
+    {
+        for (int i = 0; i < numberOfBuckets(indexBitLength); i++) {
+            listener.visit(i, getValue(i));
+        }
+    }
+
     public int estimatedSerializedSize()
     {
         return SizeOf.SIZE_OF_BYTE + // type + version

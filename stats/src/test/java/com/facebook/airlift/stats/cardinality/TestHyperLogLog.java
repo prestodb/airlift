@@ -128,6 +128,16 @@ public class TestHyperLogLog
     }
 
     @Test
+    public void testNumberOfBuckets()
+    {
+        int[] bucketCounts = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
+        for (int count : bucketCounts) {
+            HyperLogLog hll = HyperLogLog.newInstance(count);
+            assertEquals(hll.getNumberOfBuckets(), count);
+        }
+    }
+
+    @Test
     public void testRoundtrip()
             throws Exception
     {

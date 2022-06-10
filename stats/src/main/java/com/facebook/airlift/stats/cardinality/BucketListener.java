@@ -13,23 +13,7 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-enum Format
+public interface BucketListener
 {
-    SPARSE_V1(0),
-    DENSE_V1(1),
-    SPARSE_V2(2),
-    DENSE_V2(3),
-    PRIVATE_LPCA_V1(4);
-
-    private byte tag;
-
-    Format(int tag)
-    {
-        this.tag = (byte) tag;
-    }
-
-    public byte getTag()
-    {
-        return tag;
-    }
+    void visit(int bucket, int value);
 }

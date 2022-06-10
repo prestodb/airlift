@@ -22,6 +22,8 @@ interface HllInstance
 
     long cardinality();
 
+    void eachBucket(BucketListener listener);
+
     int getIndexBitLength();
 
     int estimatedInMemorySize();

@@ -19,6 +19,7 @@ import io.airlift.slice.Slice;
 import org.openjdk.jol.info.ClassLayout;
 
 import static com.facebook.airlift.stats.cardinality.Utils.indexBitLength;
+import static com.facebook.airlift.stats.cardinality.Utils.numberOfBuckets;
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class HyperLogLog
@@ -97,6 +98,11 @@ public class HyperLogLog
         return instance.cardinality();
     }
 
+    public void eachBucket(BucketListener listener)
+    {
+        instance.eachBucket(listener);
+    }
+
     public int estimatedInMemorySize()
     {
         return instance.estimatedInMemorySize() + INSTANCE_SIZE;
@@ -105,6 +111,11 @@ public class HyperLogLog
     public int estimatedSerializedSize()
     {
         return instance.estimatedSerializedSize();
+    }
+
+    public int getNumberOfBuckets()
+    {
+        return numberOfBuckets(instance.getIndexBitLength());
     }
 
     public Slice serialize()
