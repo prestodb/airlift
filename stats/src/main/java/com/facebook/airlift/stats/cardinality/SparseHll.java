@@ -88,7 +88,7 @@ final class SparseHll
     {
         // TODO: investigate whether accumulate, sort and merge results in better performance due to avoiding the shift+insert in every call
 
-        int bucket = Utils.computeIndex(hash, EXTENDED_PREFIX_BITS);
+        int bucket = Utils.computeIndex(hash, indexBitLength);
         int position = searchBucket(bucket);
 
         // add entry if missing
@@ -109,7 +109,7 @@ final class SparseHll
         }
         else {
             int currentEntry = entries[position];
-            int newValue = Utils.numberOfLeadingZeros(hash, EXTENDED_PREFIX_BITS);
+            int newValue = Utils.numberOfLeadingZeros(hash, indexBitLength);
 
             if (decodeBucketValue(currentEntry) < newValue) {
                 entries[position] = encode(bucket, newValue);
@@ -119,27 +119,25 @@ final class SparseHll
 
     private int encode(long hash)
     {
-        return encode(computeIndex(hash, EXTENDED_PREFIX_BITS), numberOfLeadingZeros(hash, EXTENDED_PREFIX_BITS));
+        return encode(computeIndex(hash, indexBitLength), numberOfLeadingZeros(hash, indexBitLength));
     }
 
-    private static int encode(int bucketIndex, int value)
+    @VisibleForTesting
+    static int encode(int bucketIndex, int value)
     {
         return (bucketIndex << VALUE_BITS) | value;
     }
 
-    private static int decodeBucketIndex(int entry)
+    @VisibleForTesting
+    static int decodeBucketIndex(int entry)
     {
-        return decodeBucketIndex(EXTENDED_PREFIX_BITS, entry);
+        return entry >>> VALUE_BITS;
     }
 
-    private static int decodeBucketValue(int entry)
+    @VisibleForTesting
+    static int decodeBucketValue(int entry)
     {
         return entry & VALUE_MASK;
-    }
-
-    private static int decodeBucketIndex(int indexBitLength, int entry)
-    {
-        return entry >>> (Integer.SIZE - indexBitLength);
     }
 
     public void mergeWith(SparseHll other)
@@ -154,21 +152,8 @@ final class SparseHll
 
         for (int i = 0; i < numberOfEntries; i++) {
             int entry = entries[i];
-
-            // The leading EXTENDED_BITS_LENGTH are a proper subset of the original hash.
-            // Since we're guaranteed that indexBitLength is <= EXTENDED_BITS_LENGTH,
-            // the value stored in those bits corresponds to the bucket index in the dense HLL
-            int bucket = decodeBucketIndex(indexBitLength, entry);
-
-            // compute the number of zeros between indexBitLength and EXTENDED_BITS_LENGTH
-            int zeros = Integer.numberOfLeadingZeros(entry << indexBitLength);
-
-            // if zeros > EXTENDED_BITS_LENGTH - indexBits, it means all those bits were zeros,
-            // so look at the entry value, which contains the number of leading 0 *after* EXTENDED_BITS_LENGTH
-            int bits = EXTENDED_PREFIX_BITS - indexBitLength;
-            if (zeros > bits) {
-                zeros = bits + decodeBucketValue(entry);
-            }
+            int bucket = decodeBucketIndex(entry);
+            int zeros = decodeBucketValue(entry);
 
             result.insert(bucket, zeros + 1); // + 1 because HLL stores leading number of zeros + 1
         }
@@ -179,10 +164,9 @@ final class SparseHll
     @Override
     public long cardinality()
     {
-        // Estimate the cardinality using linear counting over the theoretical 2^EXTENDED_BITS_LENGTH buckets available due
-        // to the fact that we're recording the raw leading EXTENDED_BITS_LENGTH of the hash. This produces much better precision
-        // while in the sparse regime.
-        int totalBuckets = numberOfBuckets(EXTENDED_PREFIX_BITS);
+        // Estimate the cardinality using linear counting over the theoretical 2^indexBitLength buckets available.
+        // This produces much better precision while in the sparse regime.
+        int totalBuckets = numberOfBuckets(indexBitLength);
         int zeroBuckets = totalBuckets - numberOfEntries;
 
         return Math.round(linearCounting(zeroBuckets, totalBuckets));
@@ -293,7 +277,7 @@ final class SparseHll
 
     private static void validatePrefixLength(int indexBitLength)
     {
-        checkArgument(indexBitLength >= 1 && indexBitLength <= EXTENDED_PREFIX_BITS, "indexBitLength is out of range");
+        checkArgument(indexBitLength >= 1 && indexBitLength <= 16, "indexBitLength is out of range");
     }
 
     @VisibleForTesting

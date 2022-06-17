@@ -61,6 +61,50 @@ public class TestSparseHll
         verifyToDense(prefixBitLength, ImmutableList.of(224L, 271L));
     }
 
+    @Test(dataProvider = "bits")
+    public void testCorrectNumberOfZeros(int indexBitLength)
+    {
+        SparseHll sparseHll = new SparseHll(indexBitLength);
+        int limit = Math.min(Long.SIZE - indexBitLength, Utils.numberOfBuckets(indexBitLength));
+        for (int i = 0; i < limit; i++) {
+            // insert a hash for bucket i that has i leading zeros
+            sparseHll.insertHash(createHashForBucket(indexBitLength, i, i));
+        }
+
+        // each non-empty bucket should have value index + 1
+        sparseHll.eachBucket((i, value) -> assertEquals(value, i + 1));
+    }
+
+    @Test(dataProvider = "bits")
+    public void testCorrectNumberOfZerosOnUpdate(int indexBitLength)
+    {
+        SparseHll sparseHll = new SparseHll(indexBitLength);
+        int limit = Math.min(Long.SIZE - indexBitLength, Utils.numberOfBuckets(indexBitLength));
+        for (int i = 0; i < limit; i++) {
+            // insert a hash for bucket i that has no leading zeros
+            sparseHll.insertHash(createHashForBucket(indexBitLength, i, 0));
+        }
+        for (int i = 0; i < limit; i++) {
+            // insert a hash for bucket i that has i leading zeros
+            sparseHll.insertHash(createHashForBucket(indexBitLength, i, i));
+        }
+
+        // each non-empty bucket should have value index + 1
+        sparseHll.eachBucket((i, value) -> assertEquals(value, i + 1));
+    }
+
+    @Test(dataProvider = "bits")
+    public void testEncodeDecode(int indexBitLength)
+    {
+        for (int b = 0; b < Utils.numberOfBuckets(indexBitLength); b++) {
+            for (int i = 0; i < Long.SIZE - indexBitLength; i++) {
+                int encoded = SparseHll.encode(b, i);
+                assertEquals(SparseHll.decodeBucketIndex(encoded), b);
+                assertEquals(SparseHll.decodeBucketValue(encoded), i);
+            }
+        }
+    }
+
     @Test
     public void testRetainedSize()
     {
@@ -69,7 +113,9 @@ public class TestSparseHll
         int[] entries = new int[1];
         long retainedSize = sizeOf(entries) + SPARSE_HLL_INSTANCE_SIZE;
         for (int value = 0; value < 100; value++) {
-            sparseHll.insertHash(Murmur3Hash128.hash64(value));
+            // force each insertion into a different bucket to ensure each results in a new entry
+            long hash = createHashForBucket(10, value, value % 5);
+            sparseHll.insertHash(hash);
             if (value % 10 == 1) {
                 // we increase the capacity by 10 once full
                 entries = new int[value + 10];
@@ -77,6 +123,15 @@ public class TestSparseHll
             }
             assertEquals(sparseHll.estimatedInMemorySize(), retainedSize);
         }
+    }
+
+    private static long createHashForBucket(int indexBitLength, int bucket, int leadingZeros)
+    {
+        // put a 1 in the indexBitLength + i + 1-th place
+        long hash = 1L << (Long.SIZE - (indexBitLength + leadingZeros + 1));
+        // set index bits to corresponding bucket index
+        hash |= (long) bucket << (Long.SIZE - indexBitLength);
+        return hash;
     }
 
     private static void verifyMerge(int prefixBitLength, List<Long> one, List<Long> two)
