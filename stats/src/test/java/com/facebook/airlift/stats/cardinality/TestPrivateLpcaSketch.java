@@ -30,7 +30,7 @@ public class TestPrivateLpcaSketch
         for (int i = 0; i < 100_000; i++) {
             hll.add(i);
         }
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, new TestingRandomizedResponse());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingRandomizationStrategy());
         int threshold = lpca.getThreshold();
         int[] rawBuckets = getBucketValues(hll);
         for (int i = 0; i < rawBuckets.length; i++) {
@@ -45,7 +45,7 @@ public class TestPrivateLpcaSketch
         for (int i = 0; i < 100_000; i++) {
             hll.add(i);
         }
-        PrivateLpcaSketch one = new PrivateLpcaSketch(hll, 1.0);
+        PrivateLpcaSketch one = new PrivateLpcaSketch(hll, 1.0, 1.0);
         Slice serialized = one.serialize();
         PrivateLpcaSketch two = new PrivateLpcaSketch(serialized);
         Slice reserialized = two.serialize();
@@ -59,7 +59,7 @@ public class TestPrivateLpcaSketch
         int[] bucketCounts = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
         for (int count : bucketCounts) {
             HyperLogLog hll = HyperLogLog.newInstance(count);
-            PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0);
+            PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0);
             assertEquals(lpca.getBitmap().length * 8, count);
         }
     }
@@ -74,7 +74,7 @@ public class TestPrivateLpcaSketch
             hll2.add(-i);
         }
 
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll1, 1.0, new TestingRandomizedResponse());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll1, 1.0, 1.0, new TestingRandomizationStrategy());
         lpca.update(hll2);
 
         int threshold = lpca.getThreshold();
@@ -90,7 +90,7 @@ public class TestPrivateLpcaSketch
     {
         HyperLogLog hll1 = HyperLogLog.newInstance(1024);
         HyperLogLog hll2 = HyperLogLog.newInstance(512);
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll1, 1.0, new TestingRandomizedResponse());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll1, 1.0, 1.0, new TestingRandomizationStrategy());
 
         boolean thrown = false;
 
@@ -108,7 +108,7 @@ public class TestPrivateLpcaSketch
     public void testSetBit()
     {
         HyperLogLog hll = HyperLogLog.newInstance(32);
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, new TestingRandomizedResponse());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingRandomizationStrategy());
 
         for (int b = 0; b < lpca.getNumberOfBuckets(); b++) {
             lpca.setBit(b, true);
@@ -122,7 +122,7 @@ public class TestPrivateLpcaSketch
     public void testFlipBit()
     {
         HyperLogLog hll = HyperLogLog.newInstance(32);
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, new TestingRandomizedResponse());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingRandomizationStrategy());
 
         lpca.setBit(10, true);
         assertTrue(getBit(lpca, 10));
@@ -136,7 +136,7 @@ public class TestPrivateLpcaSketch
     public void testBitProportion()
     {
         HyperLogLog hll = HyperLogLog.newInstance(32);
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, new TestingRandomizedResponse());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingRandomizationStrategy());
 
         int cutoff = 18;
         for (int i = 0; i < lpca.getNumberOfBuckets(); i++) {

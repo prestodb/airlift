@@ -113,6 +113,11 @@ public class HyperLogLog
         return instance.estimatedSerializedSize();
     }
 
+    public int getMaxBucketValue()
+    {
+        return Long.SIZE - instance.getIndexBitLength() + 1;
+    }
+
     public int getNumberOfBuckets()
     {
         return numberOfBuckets(instance.getIndexBitLength());

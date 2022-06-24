@@ -13,25 +13,11 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-import java.security.SecureRandom;
-
-public class SecureRandomizedResponse
-        implements RandomizedResponseStrategy
+public interface RandomizationStrategy
 {
-    private final SecureRandom random;
+    double effectiveProbability(double probability);
 
-    public SecureRandomizedResponse()
-    {
-        this.random = new SecureRandom();
-    }
+    boolean nextBoolean(double probability);
 
-    public double effectiveProbability(double flipProbability)
-    {
-        return flipProbability;
-    }
-
-    public boolean shouldFlip(double flipProbability)
-    {
-        return random.nextDouble() <= flipProbability;
-    }
+    double nextLaplace(double scale);
 }

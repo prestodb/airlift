@@ -21,8 +21,6 @@ import io.airlift.slice.Slice;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import java.util.Arrays;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
@@ -33,6 +31,10 @@ import static com.google.common.base.Preconditions.checkArgument;
  * sketch by randomly perturbing the buckets via randomized response.
  * The final cardinality estimate is similar to the classical linear probabilistic
  * counting algorithm (LPCA).
+ *
+ * <p>The final sketch (and the resulting cardinality estimate) is
+ * epsilon-differentially private, where
+ * epsilon = epsilonThreshold + epsilonRandomizedResponse.
  */
 @NotThreadSafe
 public class PrivateLpcaSketch
@@ -40,34 +42,35 @@ public class PrivateLpcaSketch
     private byte[] bitmap;
     private final int threshold;
     private final int numberOfBuckets;
-    private final double epsilon;
-    private final RandomizedResponseStrategy randomizedResponseStrategy;
+    private final double epsilonThreshold;
+    private final double epsilonRandomizedResponse;
+    private final RandomizationStrategy randomizationStrategy;
     private static final int BYTE_MASK = 0b11111111;
 
-    public PrivateLpcaSketch(HyperLogLog hll, double epsilon)
+    public PrivateLpcaSketch(HyperLogLog hll, double epsilonThreshold, double epsilonRandomizedResponse)
     {
-        this(hll, epsilon, new SecureRandomizedResponse());
+        this(hll, epsilonThreshold, epsilonRandomizedResponse, new SecureRandomizationStrategy());
     }
 
     public PrivateLpcaSketch(Slice serialized)
     {
-        this(serialized, new SecureRandomizedResponse());
+        this(serialized, new SecureRandomizationStrategy());
     }
 
-    public PrivateLpcaSketch(HyperLogLog hll, double epsilon, RandomizedResponseStrategy randomizedResponseStrategy)
+    public PrivateLpcaSketch(HyperLogLog hll, double epsilonThreshold, double epsilonRandomizedResponse, RandomizationStrategy randomizationStrategy)
     {
-        this.randomizedResponseStrategy = randomizedResponseStrategy;
-        this.epsilon = epsilon;
-
+        this.randomizationStrategy = randomizationStrategy;
+        this.epsilonThreshold = epsilonThreshold;
+        this.epsilonRandomizedResponse = epsilonRandomizedResponse;
         numberOfBuckets = hll.getNumberOfBuckets();
         threshold = findThreshold(hll);
         writeBitmap(hll);
         applyRandomizedResponse();
     }
 
-    public PrivateLpcaSketch(Slice serialized, RandomizedResponseStrategy randomizedResponseStrategy)
+    public PrivateLpcaSketch(Slice serialized, RandomizationStrategy randomizationStrategy)
     {
-        this.randomizedResponseStrategy = randomizedResponseStrategy;
+        this.randomizationStrategy = randomizationStrategy;
 
         // Format:
         // format | numberOfBuckets | threshold | epsilon | bitmap
@@ -77,7 +80,8 @@ public class PrivateLpcaSketch
 
         numberOfBuckets = input.readInt();
         threshold = input.readInt();
-        epsilon = input.readDouble();
+        epsilonThreshold = input.readDouble();
+        epsilonRandomizedResponse = input.readDouble();
         bitmap = new byte[numberOfBuckets / Byte.SIZE];
         for (int i = 0; i < bitmap.length; i++) {
             bitmap[i] = input.readByte();
@@ -88,7 +92,7 @@ public class PrivateLpcaSketch
     {
         double p = getFlipProbability();
         for (int i = 0; i < numberOfBuckets; i++) {
-            if (randomizedResponseStrategy.shouldFlip(p)) {
+            if (randomizationStrategy.nextBoolean(p)) {
                 flipBit(i);
             }
         }
@@ -97,7 +101,7 @@ public class PrivateLpcaSketch
     private void applyRandomizedResponse(int bucket)
     {
         double p = getFlipProbability();
-        if (randomizedResponseStrategy.shouldFlip(p)) {
+        if (randomizationStrategy.nextBoolean(p)) {
             flipBit(bucket);
         }
     }
@@ -127,17 +131,27 @@ public class PrivateLpcaSketch
         return SizeOf.SIZE_OF_BYTE + // type + version
                 SizeOf.SIZE_OF_INT + // number of buckets
                 SizeOf.SIZE_OF_INT + // threshold
-                SizeOf.SIZE_OF_DOUBLE + // epsilon
+                SizeOf.SIZE_OF_DOUBLE + // epsilonThreshold
+                SizeOf.SIZE_OF_DOUBLE + // epsilonRandomizedResponse
                 (numberOfBuckets / Byte.SIZE * SizeOf.SIZE_OF_BYTE); // bitmap
     }
 
-    private static int findThreshold(HyperLogLog hll)
+    private int findThreshold(HyperLogLog hll)
     {
-        // This function is subject to change.
+        // We use a noisy adjusted mean as a measure of centrality.
+        // Empirically, the mean seems to be around 0.20 higher than the median on average.
+        // This means that usually, we should be picking a value very close to the median.
         int[] values = new int[hll.getNumberOfBuckets()];
         hll.eachBucket((i, value) -> values[i] = value);
-        Arrays.sort(values);
-        return values[Math.floorDiv(values.length, 2)];
+        double mean = 0;
+        for (int val : values) {
+            mean += (double) val / hll.getNumberOfBuckets();
+        }
+
+        double sensitivity = (double) hll.getMaxBucketValue() / hll.getNumberOfBuckets();
+        double noise = randomizationStrategy.nextLaplace(sensitivity / epsilonThreshold);
+        int result = (int) Math.round(mean + noise - 0.2);
+        return Math.min(hll.getMaxBucketValue() - 1, Math.max(0, result)); // ensure within sane bounds
     }
 
     @VisibleForTesting
@@ -161,13 +175,13 @@ public class PrivateLpcaSketch
         // So the proportion of bits equal to 1 has expectation:
         // p + (1-2p) T,
         // where T is the true proportion.
-        double effProbability = randomizedResponseStrategy.effectiveProbability(getFlipProbability());
+        double effProbability = randomizationStrategy.effectiveProbability(getFlipProbability());
         return (getRawBitProportion() - effProbability) / (1 - 2 * effProbability);
     }
 
     private double getFlipProbability()
     {
-        return 1.0 / (Math.exp(epsilon) + 1.0);
+        return 1.0 / (Math.exp(epsilonRandomizedResponse) + 1.0);
     }
 
     public int getNumberOfBuckets()
@@ -198,7 +212,8 @@ public class PrivateLpcaSketch
                 .appendByte(Format.PRIVATE_LPCA_V1.getTag())
                 .appendInt(numberOfBuckets)
                 .appendInt(threshold)
-                .appendDouble(epsilon)
+                .appendDouble(epsilonThreshold)
+                .appendDouble(epsilonRandomizedResponse)
                 .appendBytes(bitmap);
 
         return output.slice();

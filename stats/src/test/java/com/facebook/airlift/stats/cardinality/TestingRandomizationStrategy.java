@@ -13,9 +13,24 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-public interface RandomizedResponseStrategy
+/**
+ * A deterministic alternative to randomness (i.e., mock random numbers)
+ */
+public class TestingRandomizationStrategy
+        implements RandomizationStrategy
 {
-    double effectiveProbability(double flipProbability);
+    public double effectiveProbability(double probability)
+    {
+        return 0.0;
+    }
 
-    boolean shouldFlip(double flipProbability);
+    public boolean nextBoolean(double probability)
+    {
+        return false;
+    }
+
+    public double nextLaplace(double scale)
+    {
+        return 0.0;
+    }
 }
