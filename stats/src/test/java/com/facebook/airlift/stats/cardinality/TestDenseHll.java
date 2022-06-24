@@ -19,6 +19,7 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
+import static com.facebook.airlift.stats.cardinality.TestUtils.createHashForBucket;
 import static com.facebook.airlift.stats.cardinality.TestUtils.sequence;
 import static com.facebook.airlift.stats.cardinality.Utils.numberOfBuckets;
 import static io.airlift.slice.testing.SliceAssertions.assertSlicesEqual;
@@ -26,6 +27,27 @@ import static org.testng.Assert.assertEquals;
 
 public class TestDenseHll
 {
+    @Test(dataProvider = "bits")
+    public void testCorrectNumberOfZeros(int indexBitLength)
+    {
+        DenseHll denseHll = new DenseHll(indexBitLength);
+        int limit = Math.min(Long.SIZE - indexBitLength, Utils.numberOfBuckets(indexBitLength));
+        for (int i = 0; i < limit; i++) {
+            // insert a hash for bucket i that has i leading zeros
+            denseHll.insertHash(createHashForBucket(indexBitLength, i, i));
+        }
+
+        // each non-empty bucket should have value index + 1
+        denseHll.eachBucket((i, value) -> {
+            if (i < limit) {
+                assertEquals(value, i + 1);
+            }
+            else {
+                assertEquals(value, 0);
+            }
+        });
+    }
+
     @Test(dataProvider = "bits")
     public void testMultipleMerges(int prefixBitLength)
             throws Exception

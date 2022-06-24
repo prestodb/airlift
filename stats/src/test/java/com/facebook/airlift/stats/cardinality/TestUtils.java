@@ -31,4 +31,13 @@ public final class TestUtils
 
         return builder.build();
     }
+
+    public static long createHashForBucket(int indexBitLength, int bucket, int leadingZeros)
+    {
+        // put a 1 in the indexBitLength + i + 1-th place
+        long hash = 1L << (Long.SIZE - (indexBitLength + leadingZeros + 1));
+        // set index bits to corresponding bucket index
+        hash |= (long) bucket << (Long.SIZE - indexBitLength);
+        return hash;
+    }
 }
