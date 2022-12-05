@@ -35,12 +35,15 @@ public class HttpServerInfo
     private final URI httpUri;
     private final URI httpExternalUri;
     private final URI httpsUri;
+    private final URI alternativeHttpsUri;
     private final URI httpsExternalUri;
+    private final URI alternativeHttpsExternalUri;
     private final URI adminUri;
     private final URI adminExternalUri;
 
     private final ServerSocketChannel httpChannel;
     private final ServerSocketChannel httpsChannel;
+    private final ServerSocketChannel alternativeHttpsChannel;
     private final ServerSocketChannel adminChannel;
 
     @Inject
@@ -61,11 +64,25 @@ public class HttpServerInfo
             httpsChannel = createChannel(nodeInfo.getBindIp(), config.getHttpsPort(), config.getHttpAcceptQueueSize());
             httpsUri = buildUri("https", nodeInfo.getInternalAddress(), port(httpsChannel));
             httpsExternalUri = buildUri("https", nodeInfo.getExternalAddress(), httpsUri.getPort());
+
+            if (config.isAlternativeHttpsEnabled()) {
+                alternativeHttpsChannel = createChannel(nodeInfo.getBindIp(), config.getAlternativeHttpsPort(), config.getHttpAcceptQueueSize());
+                alternativeHttpsUri = buildUri("https", nodeInfo.getInternalAddress(), port(alternativeHttpsChannel));
+                alternativeHttpsExternalUri = buildUri("https", nodeInfo.getExternalAddress(), alternativeHttpsUri.getPort());
+            }
+            else {
+                alternativeHttpsChannel = null;
+                alternativeHttpsUri = null;
+                alternativeHttpsExternalUri = null;
+            }
         }
         else {
             httpsChannel = null;
             httpsUri = null;
             httpsExternalUri = null;
+            alternativeHttpsChannel = null;
+            alternativeHttpsUri = null;
+            alternativeHttpsExternalUri = null;
         }
 
         if (config.isAdminEnabled()) {
@@ -101,9 +118,19 @@ public class HttpServerInfo
         return httpsUri;
     }
 
+    public URI getAlternativeHttpsUri()
+    {
+        return alternativeHttpsUri;
+    }
+
     public URI getHttpsExternalUri()
     {
         return httpsExternalUri;
+    }
+
+    public URI getAlternativeHttpsExternalUri()
+    {
+        return alternativeHttpsExternalUri;
     }
 
     public URI getAdminUri()
@@ -129,6 +156,11 @@ public class HttpServerInfo
     ServerSocketChannel getAdminChannel()
     {
         return adminChannel;
+    }
+
+    ServerSocketChannel getAlternativeHttpsChannel()
+    {
+        return alternativeHttpsChannel;
     }
 
     private static URI buildUri(String scheme, String host, int port)

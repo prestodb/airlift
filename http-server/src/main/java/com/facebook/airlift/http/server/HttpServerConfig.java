@@ -72,7 +72,9 @@ public class HttpServerConfig
     private int httpAcceptQueueSize = 8000;
 
     private boolean httpsEnabled;
+    private boolean alternativeHttpsEnabled;
     private int httpsPort = 8443;
+    private int alternativeHttpsPort = 8444;
     private String keystorePath;
     private String keystorePassword;
     private String keyManagerPassword;
@@ -178,15 +180,39 @@ public class HttpServerConfig
         return this;
     }
 
+    public boolean isAlternativeHttpsEnabled()
+    {
+        return alternativeHttpsEnabled;
+    }
+
+    @Config("http-server.https.alternative.enabled")
+    public HttpServerConfig setAlternativeHttpsEnabled(boolean alternativeHttpsEnabled)
+    {
+        this.alternativeHttpsEnabled = alternativeHttpsEnabled;
+        return this;
+    }
+
     public int getHttpsPort()
     {
         return httpsPort;
+    }
+
+    public int getAlternativeHttpsPort()
+    {
+        return alternativeHttpsPort;
     }
 
     @Config("http-server.https.port")
     public HttpServerConfig setHttpsPort(int httpsPort)
     {
         this.httpsPort = httpsPort;
+        return this;
+    }
+
+    @Config("http-server.https.alternative-port")
+    public HttpServerConfig setAlternativeHttpsPort(int httpsPort)
+    {
+        this.alternativeHttpsPort = httpsPort;
         return this;
     }
 
