@@ -87,7 +87,9 @@ public class TestHttpServerConfig
                 .setAuthorizationEnabled(false)
                 .setDefaultAuthorizationPolicy(HttpServerConfig.AuthorizationPolicy.ALLOW)
                 .setDefaultAllowedRoles("")
-                .setAllowUnsecureRequestsInAuthorizer(false));
+                .setAllowUnsecureRequestsInAuthorizer(false)
+                .setAlternativeHttpsEnabled(false)
+                .setAlternativeHttpsPort(8444));
     }
 
     @Test
@@ -143,6 +145,8 @@ public class TestHttpServerConfig
                 .put("http-server.authorization.default-policy", "DENY")
                 .put("http-server.authorization.default-allowed-roles", "user, internal, admin")
                 .put("http-server.authorization.allow-unsecured-requests", "true")
+                .put("http-server.https.alternative.enabled", "true")
+                .put("http-server.https.alternative-port", "4")
                 .build();
 
         HttpServerConfig expected = new HttpServerConfig()
@@ -194,7 +198,9 @@ public class TestHttpServerConfig
                 .setAuthorizationEnabled(true)
                 .setDefaultAuthorizationPolicy(HttpServerConfig.AuthorizationPolicy.DENY)
                 .setDefaultAllowedRoles("user, internal, admin")
-                .setAllowUnsecureRequestsInAuthorizer(true);
+                .setAllowUnsecureRequestsInAuthorizer(true)
+                .setAlternativeHttpsEnabled(true)
+                .setAlternativeHttpsPort(4);
 
         ConfigAssertions.assertFullMapping(properties, expected);
     }

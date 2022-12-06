@@ -170,6 +170,7 @@ public class HttpServer
                 "http-server-timeout",
                 config.getTimeoutConcurrency(),
                 config.getTimeoutThreads());
+
         // set up HTTP connector
         ServerConnector httpConnector;
         if (config.isHttpEnabled()) {
@@ -216,75 +217,18 @@ public class HttpServer
             server.addConnector(httpConnector);
         }
 
-        List<String> includedCipherSuites = config.getHttpsIncludedCipherSuites();
-        List<String> excludedCipherSuites = config.getHttpsExcludedCipherSuites();
-
-        // set up NIO-based HTTPS connector
-        ServerConnector httpsConnector;
+        // Set up NIO-based HTTPS connector.
         if (config.isHttpsEnabled()) {
-            HttpConfiguration httpsConfiguration = new HttpConfiguration(baseHttpConfiguration);
-            httpsConfiguration.addCustomizer(new SecureRequestCustomizer());
-
-            SslContextFactory sslContextFactory = new SslContextFactory();
-            Optional<KeyStore> pemKeyStore = tryLoadPemKeyStore(config);
-            if (pemKeyStore.isPresent()) {
-                sslContextFactory.setKeyStore(pemKeyStore.get());
-                sslContextFactory.setKeyStorePassword("");
-            }
-            else {
-                sslContextFactory.setKeyStorePath(config.getKeystorePath());
-                sslContextFactory.setKeyStorePassword(config.getKeystorePassword());
-                if (config.getKeyManagerPassword() != null) {
-                    sslContextFactory.setKeyManagerPassword(config.getKeyManagerPassword());
-                }
-            }
-            if (config.getTrustStorePath() != null) {
-                Optional<KeyStore> pemTrustStore = tryLoadPemTrustStore(config);
-                if (pemTrustStore.isPresent()) {
-                    sslContextFactory.setTrustStore(pemTrustStore.get());
-                    sslContextFactory.setTrustStorePassword("");
-                }
-                else {
-                    sslContextFactory.setTrustStorePath(config.getTrustStorePath());
-                    sslContextFactory.setTrustStorePassword(config.getTrustStorePassword());
-                }
-            }
-
-            sslContextFactory.setIncludeCipherSuites(includedCipherSuites.toArray(new String[0]));
-            sslContextFactory.setExcludeCipherSuites(excludedCipherSuites.toArray(new String[0]));
-            sslContextFactory.setSecureRandomAlgorithm(config.getSecureRandomAlgorithm());
-            sslContextFactory.setWantClientAuth(true);
-            sslContextFactory.setSslSessionTimeout((int) config.getSslSessionTimeout().getValue(SECONDS));
-            sslContextFactory.setSslSessionCacheSize(config.getSslSessionCacheSize());
-            SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
-
-            Integer acceptors = config.getHttpsAcceptorThreads();
-            Integer selectors = config.getHttpsSelectorThreads();
-            httpsConnector = createServerConnector(
-                    httpServerInfo.getHttpsChannel(),
-                    server,
-                    null,
-                    concurrentScheduler,
-                    firstNonNull(acceptors, -1),
-                    firstNonNull(selectors, -1),
-                    sslConnectionFactory,
-                    new HttpConnectionFactory(httpsConfiguration));
-            httpsConnector.setName("https");
-            httpsConnector.setPort(httpServerInfo.getHttpsUri().getPort());
-            httpsConnector.setIdleTimeout(config.getNetworkMaxIdleTime().toMillis());
-            httpsConnector.setHost(nodeInfo.getBindIp().getHostAddress());
-            httpsConnector.setAcceptQueueSize(config.getHttpAcceptQueueSize());
-
-            // track connection statistics
-            ConnectionStatistics connectionStats = new ConnectionStatistics();
-            httpsConnector.addBean(connectionStats);
-            this.httpsConnectionStats = new ConnectionStats(connectionStats);
-
-            if (channelListener != null) {
-                httpsConnector.addBean(channelListener);
-            }
-
+            ServerConnector httpsConnector = createHttpsConnector(config, nodeInfo, baseHttpConfiguration, concurrentScheduler,
+                    channelListener, "https", httpServerInfo.getHttpsUri().getPort(), httpServerInfo.getHttpsChannel());
             server.addConnector(httpsConnector);
+        }
+
+        // Set up NIO-based alternative HTTPS connector.
+        if (config.isHttpsEnabled() && config.isAlternativeHttpsEnabled()) {
+            ServerConnector alternativeHttpsConnector = createHttpsConnector(config, nodeInfo, baseHttpConfiguration, concurrentScheduler,
+                    channelListener, "alternative-https", httpServerInfo.getAlternativeHttpsUri().getPort(), httpServerInfo.getAlternativeHttpsChannel());
+            server.addConnector(alternativeHttpsConnector);
         }
 
         // set up NIO-based Admin connector
@@ -308,8 +252,8 @@ public class HttpServer
                 }
                 sslContextFactory.setSecureRandomAlgorithm(config.getSecureRandomAlgorithm());
                 sslContextFactory.setWantClientAuth(true);
-                sslContextFactory.setIncludeCipherSuites(includedCipherSuites.toArray(new String[0]));
-                sslContextFactory.setExcludeCipherSuites(excludedCipherSuites.toArray(new String[0]));
+                sslContextFactory.setIncludeCipherSuites(config.getHttpsIncludedCipherSuites().toArray(new String[0]));
+                sslContextFactory.setExcludeCipherSuites(config.getHttpsExcludedCipherSuites().toArray(new String[0]));
                 SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
                 adminConnector = createServerConnector(
                         httpServerInfo.getAdminChannel(),
@@ -370,7 +314,7 @@ public class HttpServer
             handlers.addHandler(gzipHandler);
         }
 
-        handlers.addHandler(createServletContext(config, defaultServlet, servlets, parameters, filters, tokenManager, loginService, authorizer, "http", "https"));
+        handlers.addHandler(createServletContext(config, defaultServlet, servlets, parameters, filters, tokenManager, loginService, authorizer, "http", "https", "alternative-https"));
 
         if (config.isRequestStatsEnabled()) {
             RequestLogHandler statsRecorder = new RequestLogHandler();
@@ -648,5 +592,85 @@ public class HttpServer
         ServerConnector connector = new ServerConnector(server, executor, scheduler, null, acceptors, selectors, factories);
         connector.open(channel);
         return connector;
+    }
+
+    private ServerConnector createHttpsConnector(
+            HttpServerConfig config,
+            NodeInfo nodeInfo,
+            HttpConfiguration baseHttpConfiguration,
+            ConcurrentScheduler concurrentScheduler,
+            HttpServerChannelListener channelListener,
+            String httpsName,
+            int httpsPort,
+            ServerSocketChannel socketChannel)
+            throws IOException
+    {
+        ServerConnector httpsConnector;
+        List<String> includedCipherSuites = config.getHttpsIncludedCipherSuites();
+        List<String> excludedCipherSuites = config.getHttpsExcludedCipherSuites();
+
+        HttpConfiguration httpsConfiguration = new HttpConfiguration(baseHttpConfiguration);
+        httpsConfiguration.addCustomizer(new SecureRequestCustomizer());
+
+        SslContextFactory sslContextFactory = new SslContextFactory();
+        Optional<KeyStore> pemKeyStore = tryLoadPemKeyStore(config);
+        if (pemKeyStore.isPresent()) {
+            sslContextFactory.setKeyStore(pemKeyStore.get());
+            sslContextFactory.setKeyStorePassword("");
+        }
+        else {
+            sslContextFactory.setKeyStorePath(config.getKeystorePath());
+            sslContextFactory.setKeyStorePassword(config.getKeystorePassword());
+            if (config.getKeyManagerPassword() != null) {
+                sslContextFactory.setKeyManagerPassword(config.getKeyManagerPassword());
+            }
+        }
+        if (config.getTrustStorePath() != null) {
+            Optional<KeyStore> pemTrustStore = tryLoadPemTrustStore(config);
+            if (pemTrustStore.isPresent()) {
+                sslContextFactory.setTrustStore(pemTrustStore.get());
+                sslContextFactory.setTrustStorePassword("");
+            }
+            else {
+                sslContextFactory.setTrustStorePath(config.getTrustStorePath());
+                sslContextFactory.setTrustStorePassword(config.getTrustStorePassword());
+            }
+        }
+
+        sslContextFactory.setIncludeCipherSuites(includedCipherSuites.toArray(new String[0]));
+        sslContextFactory.setExcludeCipherSuites(excludedCipherSuites.toArray(new String[0]));
+        sslContextFactory.setSecureRandomAlgorithm(config.getSecureRandomAlgorithm());
+        sslContextFactory.setWantClientAuth(true);
+        sslContextFactory.setSslSessionTimeout((int) config.getSslSessionTimeout().getValue(SECONDS));
+        sslContextFactory.setSslSessionCacheSize(config.getSslSessionCacheSize());
+        SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
+
+        Integer acceptors = config.getHttpsAcceptorThreads();
+        Integer selectors = config.getHttpsSelectorThreads();
+        httpsConnector = createServerConnector(
+                socketChannel,
+                server,
+                null,
+                concurrentScheduler,
+                firstNonNull(acceptors, -1),
+                firstNonNull(selectors, -1),
+                sslConnectionFactory,
+                new HttpConnectionFactory(httpsConfiguration));
+        httpsConnector.setName(httpsName);
+        httpsConnector.setPort(httpsPort);
+        httpsConnector.setIdleTimeout(config.getNetworkMaxIdleTime().toMillis());
+        httpsConnector.setHost(nodeInfo.getBindIp().getHostAddress());
+        httpsConnector.setAcceptQueueSize(config.getHttpAcceptQueueSize());
+
+        // track connection statistics
+        ConnectionStatistics connectionStats = new ConnectionStatistics();
+        httpsConnector.addBean(connectionStats);
+        this.httpsConnectionStats = new ConnectionStats(connectionStats);
+
+        if (channelListener != null) {
+            httpsConnector.addBean(channelListener);
+        }
+
+        return httpsConnector;
     }
 }

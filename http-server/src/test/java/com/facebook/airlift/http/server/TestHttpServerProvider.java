@@ -524,6 +524,33 @@ public class TestHttpServerProvider
         createAndStartServer();
     }
 
+    @Test
+    public void testAlternativeHttpsPort()
+            throws Exception
+    {
+        config.setHttpEnabled(false)
+                .setHttpsEnabled(true)
+                .setAlternativeHttpsEnabled(true)
+                .setAlternativeHttpsPort(0)
+                .setKeystorePath(getResource("test.keystore.with.two.passwords").getPath())
+                .setKeystorePassword("airlift")
+                .setKeyManagerPassword("airliftkey");
+
+        createAndStartServer();
+
+        HttpClientConfig http1ClientConfig = new HttpClientConfig()
+                .setHttp2Enabled(false)
+                .setTrustStorePath(getResource("test.truststore").getPath())
+                .setTrustStorePassword("airlift");
+
+        try (JettyHttpClient httpClient = new JettyHttpClient(http1ClientConfig)) {
+            StatusResponse response = httpClient.execute(prepareGet().setUri(httpServerInfo.getAlternativeHttpsUri()).build(), createStatusResponseHandler());
+
+            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(response.getHeader("X-Protocol"), "HTTP/1.1");
+        }
+    }
+
     private void createAndStartServer()
             throws Exception
     {
