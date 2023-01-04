@@ -534,7 +534,10 @@ public class TestHttpServerProvider
                 .setAlternativeHttpsPort(0)
                 .setKeystorePath(getResource("test.keystore.with.two.passwords").getPath())
                 .setKeystorePassword("airlift")
-                .setKeyManagerPassword("airliftkey");
+                .setKeyManagerPassword("airliftkey")
+                .setAlternativeKeystorePath(getResource("test.keystore").getPath())
+                .setAlternativeKeystorePassword("airlift")
+                .setAlternativeKeyManagerPassword("airliftKey");
 
         createAndStartServer();
 
