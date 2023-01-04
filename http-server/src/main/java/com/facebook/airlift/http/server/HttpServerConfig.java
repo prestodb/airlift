@@ -81,6 +81,14 @@ public class HttpServerConfig
     private String secureRandomAlgorithm;
     private List<String> includedCipherSuites = ImmutableList.of();
 
+    private boolean alternativeHttpsEnabled;
+    private int alternativeHttpsPort = 8444;
+    private String alternativeKeystorePath;
+    private String alternativeKeystorePassword;
+    private String alternativeKeyManagerPassword;
+    private String alternativeTrustStorePath;
+    private String alternativeTrustStorePassword;
+
     /**
      * This property is initialized with Jetty's default excluded ciphers list.
      * @see org.eclipse.jetty.util.ssl.SslContextFactory#SslContextFactory(boolean, String)
@@ -178,15 +186,39 @@ public class HttpServerConfig
         return this;
     }
 
+    public boolean isAlternativeHttpsEnabled()
+    {
+        return alternativeHttpsEnabled;
+    }
+
+    @Config("http-server.https.alternative.enabled")
+    public HttpServerConfig setAlternativeHttpsEnabled(boolean alternativeHttpsEnabled)
+    {
+        this.alternativeHttpsEnabled = alternativeHttpsEnabled;
+        return this;
+    }
+
     public int getHttpsPort()
     {
         return httpsPort;
+    }
+
+    public int getAlternativeHttpsPort()
+    {
+        return alternativeHttpsPort;
     }
 
     @Config("http-server.https.port")
     public HttpServerConfig setHttpsPort(int httpsPort)
     {
         this.httpsPort = httpsPort;
+        return this;
+    }
+
+    @Config("http-server.https.alternative-port")
+    public HttpServerConfig setAlternativeHttpsPort(int httpsPort)
+    {
+        this.alternativeHttpsPort = httpsPort;
         return this;
     }
 
@@ -228,6 +260,18 @@ public class HttpServerConfig
         return this;
     }
 
+    public String getAlternativeKeystorePath()
+    {
+        return alternativeKeystorePath;
+    }
+
+    @Config("http-server.https.alternative.keystore.path")
+    public HttpServerConfig setAlternativeKeystorePath(String alternativeKeystorePath)
+    {
+        this.alternativeKeystorePath = alternativeKeystorePath;
+        return this;
+    }
+
     public String getKeystorePassword()
     {
         return keystorePassword;
@@ -238,6 +282,19 @@ public class HttpServerConfig
     public HttpServerConfig setKeystorePassword(String keystorePassword)
     {
         this.keystorePassword = keystorePassword;
+        return this;
+    }
+
+    public String getAlternativeKeystorePassword()
+    {
+        return alternativeKeystorePassword;
+    }
+
+    @Config("http-server.https.alternative.keystore.key")
+    @ConfigSecuritySensitive
+    public HttpServerConfig setAlternativeKeystorePassword(String alternativeKeystorePassword)
+    {
+        this.alternativeKeystorePassword = alternativeKeystorePassword;
         return this;
     }
 
@@ -254,6 +311,19 @@ public class HttpServerConfig
         return this;
     }
 
+    public String getAlternativeKeyManagerPassword()
+    {
+        return alternativeKeyManagerPassword;
+    }
+
+    @Config("http-server.https.alternative.keymanager.password")
+    @ConfigSecuritySensitive
+    public HttpServerConfig setAlternativeKeyManagerPassword(String alternativeKeystorePassword)
+    {
+        this.alternativeKeyManagerPassword = alternativeKeystorePassword;
+        return this;
+    }
+
     public String getTrustStorePath()
     {
         return trustStorePath;
@@ -263,6 +333,18 @@ public class HttpServerConfig
     public HttpServerConfig setTrustStorePath(String trustStorePath)
     {
         this.trustStorePath = trustStorePath;
+        return this;
+    }
+
+    public String getAlternativeTrustStorePath()
+    {
+        return alternativeTrustStorePath;
+    }
+
+    @Config("http-server.https.alternative.truststore.path")
+    public HttpServerConfig setAlternativeTrustStorePath(String alternativeTrustStorePath)
+    {
+        this.alternativeTrustStorePath = alternativeTrustStorePath;
         return this;
     }
 
@@ -276,6 +358,19 @@ public class HttpServerConfig
     public HttpServerConfig setTrustStorePassword(String trustStorePassword)
     {
         this.trustStorePassword = trustStorePassword;
+        return this;
+    }
+
+    public String getAlternativeTrustStorePassword()
+    {
+        return alternativeTrustStorePassword;
+    }
+
+    @Config("http-server.https.alternative.truststore.key")
+    @ConfigSecuritySensitive
+    public HttpServerConfig setAlternativeTrustStorePassword(String alternativeTrustStorePassword)
+    {
+        this.alternativeTrustStorePassword = alternativeTrustStorePassword;
         return this;
     }
 

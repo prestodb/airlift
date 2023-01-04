@@ -43,6 +43,8 @@ public class TestHttpServerInfo
         serverConfig.setHttpsEnabled(true);
         serverConfig.setHttpsPort(0);
         serverConfig.setAdminEnabled(true);
+        serverConfig.setAlternativeHttpsEnabled(true);
+        serverConfig.setAlternativeHttpsPort(0);
 
         HttpServerInfo httpServerInfo = new HttpServerInfo(serverConfig, nodeInfo);
 
@@ -57,6 +59,10 @@ public class TestHttpServerInfo
         int adminPort = httpServerInfo.getAdminUri().getPort();
         assertEquals(httpServerInfo.getAdminUri(), new URI("https://[::1]:" + adminPort));
         assertEquals(httpServerInfo.getAdminExternalUri(), new URI("https://[2001:db8::2:1]:" + adminPort));
+
+        int proxygenPort = httpServerInfo.getAlternativeHttpsUri().getPort();
+        assertEquals(httpServerInfo.getAlternativeHttpsUri(), new URI("https://[::1]:" + proxygenPort));
+        assertEquals(httpServerInfo.getAlternativeHttpsExternalUri(), new URI("https://[2001:db8::2:1]:" + proxygenPort));
 
         closeChannels(httpServerInfo);
     }
