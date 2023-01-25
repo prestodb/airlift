@@ -87,7 +87,8 @@ public class TestHttpServerConfig
                 .setAuthorizationEnabled(false)
                 .setDefaultAuthorizationPolicy(HttpServerConfig.AuthorizationPolicy.ALLOW)
                 .setDefaultAllowedRoles("")
-                .setAllowUnsecureRequestsInAuthorizer(false));
+                .setAllowUnsecureRequestsInAuthorizer(false)
+                .setSniHostCheck(true));
     }
 
     @Test
@@ -143,6 +144,7 @@ public class TestHttpServerConfig
                 .put("http-server.authorization.default-policy", "DENY")
                 .put("http-server.authorization.default-allowed-roles", "user, internal, admin")
                 .put("http-server.authorization.allow-unsecured-requests", "true")
+                .put("http-server.https.sni-host-check", "false")
                 .build();
 
         HttpServerConfig expected = new HttpServerConfig()
@@ -194,7 +196,8 @@ public class TestHttpServerConfig
                 .setAuthorizationEnabled(true)
                 .setDefaultAuthorizationPolicy(HttpServerConfig.AuthorizationPolicy.DENY)
                 .setDefaultAllowedRoles("user, internal, admin")
-                .setAllowUnsecureRequestsInAuthorizer(true);
+                .setAllowUnsecureRequestsInAuthorizer(true)
+                .setSniHostCheck(false);
 
         ConfigAssertions.assertFullMapping(properties, expected);
     }

@@ -223,7 +223,7 @@ public class HttpServer
         ServerConnector httpsConnector;
         if (config.isHttpsEnabled()) {
             HttpConfiguration httpsConfiguration = new HttpConfiguration(baseHttpConfiguration);
-            httpsConfiguration.addCustomizer(new SecureRequestCustomizer());
+            httpsConfiguration.addCustomizer(new SecureRequestCustomizer(config.isSniHostCheck()));
 
             SslContextFactory sslContextFactory = new SslContextFactory();
             Optional<KeyStore> pemKeyStore = tryLoadPemKeyStore(config);

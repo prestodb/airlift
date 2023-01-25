@@ -72,6 +72,7 @@ public class HttpServerConfig
     private int httpAcceptQueueSize = 8000;
 
     private boolean httpsEnabled;
+    private boolean sniHostCheck = true;
     private int httpsPort = 8443;
     private String keystorePath;
     private String keystorePassword;
@@ -176,6 +177,18 @@ public class HttpServerConfig
     {
         this.httpsEnabled = httpsEnabled;
         return this;
+    }
+
+    @Config("http-server.https.sni-host-check")
+    public HttpServerConfig setSniHostCheck(boolean sniHostCheck)
+    {
+        this.sniHostCheck = sniHostCheck;
+        return this;
+    }
+
+    public boolean isSniHostCheck()
+    {
+        return sniHostCheck;
     }
 
     public int getHttpsPort()
