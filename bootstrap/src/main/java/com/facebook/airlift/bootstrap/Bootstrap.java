@@ -26,6 +26,7 @@ import com.facebook.airlift.log.Logger;
 import com.facebook.airlift.log.Logging;
 import com.facebook.airlift.log.LoggingConfiguration;
 import com.google.common.annotations.Beta;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -46,6 +47,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.facebook.airlift.configuration.ConfigurationLoader.getSystemProperties;
 import static com.facebook.airlift.configuration.ConfigurationLoader.loadPropertiesFrom;
@@ -73,6 +77,7 @@ public class Bootstrap
     private boolean quiet = getDefaultFromProperties("bootstrap.quiet", false);
     private boolean strictConfig = getDefaultFromProperties("bootstrap.strict-config", true);
     private boolean requireExplicitBindings = getDefaultFromProperties("bootstrap.require-explicit-bindings", true);
+    private static final Pattern ENV_PATTERN = Pattern.compile("\\$\\{ENV:([a-zA-Z][a-zA-Z0-9_]*)}");
 
     private boolean initialized;
 
@@ -190,11 +195,13 @@ public class Bootstrap
             requiredProperties = requiredConfigurationProperties;
         }
         SortedMap<String, String> properties = new TreeMap<>();
+        SortedMap<String, String> environmentErrors = new TreeMap<>();
         if (optionalConfigurationProperties != null) {
             properties.putAll(optionalConfigurationProperties);
         }
         properties.putAll(requiredProperties);
         properties.putAll(getSystemProperties());
+        properties = replaceWithEnvironmentVariables(properties, System.getenv(), environmentErrors::put);
         properties = ImmutableSortedMap.copyOf(properties);
 
         configurationFactory = new ConfigurationFactory(properties, log::warn);
@@ -242,6 +249,10 @@ public class Bootstrap
             moduleList.add(binder -> {
                 for (Entry<String, String> unusedProperty : unusedProperties.entrySet()) {
                     binder.addError("Configuration property '%s' was not used", unusedProperty.getKey());
+                }
+
+                for (Entry<String, String> environmentError : environmentErrors.entrySet()) {
+                    binder.addError(environmentError.getValue());
                 }
             });
         }
@@ -305,5 +316,36 @@ public class Bootstrap
             return parseBoolean(propertyValue);
         }
         return defaultValue;
+    }
+
+    @VisibleForTesting
+    static SortedMap<String, String> replaceWithEnvironmentVariables(
+            Map<String, String> properties,
+            Map<String, String> environment,
+            BiConsumer<String, String> onError)
+    {
+        SortedMap<String, String> results = new TreeMap<>();
+        properties.forEach((key, value) -> {
+            Matcher result = ENV_PATTERN.matcher(value);
+            if (result.matches()) {
+                String variableName = result.group(1);
+                String envValue = environment.get(variableName);
+
+                if (envValue == null) {
+                    String errorMessage = String.format(
+                            "Configuration property `%s` references `%s`, an undefiled environment variable.",
+                            key,
+                            variableName);
+                    onError.accept(key, errorMessage);
+                }
+                else {
+                    results.put(key, envValue);
+                }
+            }
+            else {
+                results.put(key, value);
+            }
+        });
+        return results;
     }
 }

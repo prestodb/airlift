@@ -26,8 +26,12 @@ import org.testng.annotations.Test;
 
 import javax.inject.Inject;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.facebook.airlift.configuration.ConfigBinder.configBinder;
 import static com.facebook.airlift.testing.Assertions.assertContains;
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 @Test(singleThreaded = true)
@@ -91,6 +95,34 @@ public class TestBootstrap
                 .initialize()
                 .getInstance(LifeCycleManager.class)
                 .stop();
+    }
+
+    @Test
+    public void testEnvironmentVariableReplacement()
+    {
+        Map<String, String> properties = new HashMap<>();
+        Map<String, String> environment = new HashMap<>();
+        Map<String, String> errors = new HashMap<>();
+
+        properties.put("expected", "${ENV:EXPECTED}");
+        properties.put("invalid", "${ENV:INVALID}");
+        properties.put("no-replacement", "no-replacement");
+        properties.put("mixed-no-change", "${ENV:INVALID}!");
+
+        environment.put("EXPECTED", "expected-replacement");
+
+        Map<String, String> results = Bootstrap.replaceWithEnvironmentVariables(properties, environment, errors::put);
+
+        assertEquals(results.get("expected"), "expected-replacement");
+        assertEquals(results.get("no-replacement"), "no-replacement");
+        assertEquals(results.get("mixed-no-change"), "${ENV:INVALID}!");
+
+        assertEquals(3, results.size());
+        assertEquals(1, errors.size());
+
+        assertEquals(
+                errors.get("invalid"),
+                "Configuration property `invalid` references `INVALID`, an undefiled environment variable.");
     }
 
     public static class Instance {}
