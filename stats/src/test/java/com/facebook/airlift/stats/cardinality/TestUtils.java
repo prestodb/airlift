@@ -14,8 +14,13 @@
 package com.facebook.airlift.stats.cardinality;
 
 import com.google.common.collect.ImmutableList;
+import org.testng.annotations.Test;
 
 import java.util.List;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 public final class TestUtils
 {
@@ -39,5 +44,62 @@ public final class TestUtils
         // set index bits to corresponding bucket index
         hash |= (long) bucket << (Long.SIZE - indexBitLength);
         return hash;
+    }
+
+    @Test
+    public void testPowerOf2()
+    {
+        for (int i = 1; i < 20; i++) {
+            assertTrue(Utils.isPowerOf2(Math.round(Math.pow(2, i))));
+            assertFalse(Utils.isPowerOf2(Math.round(Math.pow(2, i)) + 1));
+        }
+    }
+
+    @Test
+    public void testNumberOfBuckets()
+    {
+        for (int i = 1; i < 20; i++) {
+            assertEquals(Utils.numberOfBuckets(i), Math.round(Math.pow(2, i)));
+        }
+    }
+
+    @Test
+    public void testIndexBitLength()
+    {
+        for (int i = 1; i < 20; i++) {
+            assertEquals(Utils.indexBitLength((int) Math.pow(2, i)), i);
+        }
+    }
+
+    @Test
+    public void testNumberOfLeadingZeros()
+    {
+        for (int indexBitLength : new int[]{6, 12, 18}) {
+            for (int i = 0; i < Long.SIZE - indexBitLength; i++) {
+                long hash = createHashForBucket(indexBitLength, 0, i);
+                assertEquals(Utils.numberOfLeadingZeros(hash, indexBitLength), i);
+            }
+        }
+    }
+
+    @Test
+    public void testNumberOfTrailingZeros()
+    {
+        for (int indexBitLength : new int[]{6, 12, 18}) {
+            for (int i = 0; i < Long.SIZE - 1; i++) {
+                long hash = 1L << i;
+                assertEquals(Utils.numberOfTrailingZeros(hash, indexBitLength), Math.min(i, Long.SIZE - indexBitLength));
+            }
+        }
+    }
+
+    @Test
+    public void testComputeIndex()
+    {
+        for (int indexBitLength : new int[]{6, 12, 18}) {
+            long index = 5L;
+            long hash = index << (Long.SIZE - indexBitLength);
+            assertEquals(Utils.computeIndex(hash, indexBitLength), index);
+        }
     }
 }

@@ -19,7 +19,8 @@ enum Format
     DENSE_V1(1),
     SPARSE_V2(2),
     DENSE_V2(3),
-    PRIVATE_LPCA_V1(4);
+    PRIVATE_LPCA_V1(4),
+    SFM_V1(7);
 
     private byte tag;
 

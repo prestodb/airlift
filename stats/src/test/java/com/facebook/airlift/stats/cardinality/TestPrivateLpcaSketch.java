@@ -18,7 +18,6 @@ import org.testng.annotations.Test;
 
 import static io.airlift.slice.testing.SliceAssertions.assertSlicesEqual;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class TestPrivateLpcaSketch
@@ -30,11 +29,11 @@ public class TestPrivateLpcaSketch
         for (int i = 0; i < 100_000; i++) {
             hll.add(i);
         }
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingRandomizationStrategy());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, new TestingDeterministicRandomizationStrategy());
         int threshold = lpca.getThreshold();
         int[] rawBuckets = getBucketValues(hll);
         for (int i = 0; i < rawBuckets.length; i++) {
-            assertEquals(getBit(lpca, i), rawBuckets[i] > threshold);
+            assertEquals(lpca.getBitmap().getBit(i), rawBuckets[i] > threshold);
         }
     }
 
@@ -60,7 +59,7 @@ public class TestPrivateLpcaSketch
         for (int count : bucketCounts) {
             HyperLogLog hll = HyperLogLog.newInstance(count);
             PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0);
-            assertEquals(lpca.getBitmap().length * 8, count);
+            assertEquals(lpca.getBitmap().length(), count);
         }
     }
 
@@ -74,14 +73,14 @@ public class TestPrivateLpcaSketch
             hll2.add(-i);
         }
 
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll1, 1.0, 1.0, new TestingRandomizationStrategy());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll1, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, new TestingDeterministicRandomizationStrategy());
         lpca.update(hll2);
 
         int threshold = lpca.getThreshold();
         int[] values1 = getBucketValues(hll1);
         int[] values2 = getBucketValues(hll2);
         for (int i = 0; i < values1.length; i++) {
-            assertEquals(getBit(lpca, i), Math.max(values1[i], values2[i]) > threshold);
+            assertEquals(lpca.getBitmap().getBit(i), Math.max(values1[i], values2[i]) > threshold);
         }
     }
 
@@ -90,7 +89,7 @@ public class TestPrivateLpcaSketch
     {
         HyperLogLog hll1 = HyperLogLog.newInstance(1024);
         HyperLogLog hll2 = HyperLogLog.newInstance(512);
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll1, 1.0, 1.0, new TestingRandomizationStrategy());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll1, 1.0, 1.0, new TestingDeterministicRandomizationStrategy());
 
         boolean thrown = false;
 
@@ -105,53 +104,17 @@ public class TestPrivateLpcaSketch
     }
 
     @Test
-    public void testSetBit()
-    {
-        HyperLogLog hll = HyperLogLog.newInstance(32);
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingRandomizationStrategy());
-
-        for (int b = 0; b < lpca.getNumberOfBuckets(); b++) {
-            lpca.setBit(b, true);
-            assertTrue(getBit(lpca, b));
-            lpca.setBit(b, false);
-            assertFalse(getBit(lpca, b));
-        }
-    }
-
-    @Test
-    public void testFlipBit()
-    {
-        HyperLogLog hll = HyperLogLog.newInstance(32);
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingRandomizationStrategy());
-
-        lpca.setBit(10, true);
-        assertTrue(getBit(lpca, 10));
-        lpca.flipBit(10);
-        assertFalse(getBit(lpca, 10));
-        lpca.flipBit(10);
-        assertTrue(getBit(lpca, 10));
-    }
-
-    @Test
     public void testBitProportion()
     {
         HyperLogLog hll = HyperLogLog.newInstance(32);
-        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingRandomizationStrategy());
+        PrivateLpcaSketch lpca = new PrivateLpcaSketch(hll, 1.0, 1.0, new TestingDeterministicRandomizationStrategy());
 
         int cutoff = 18;
         for (int i = 0; i < lpca.getNumberOfBuckets(); i++) {
-            lpca.setBit(i, i < cutoff);
+            lpca.getBitmap().setBit(i, i < cutoff);
         }
 
         assertEquals(lpca.getRawBitProportion(), 18.0 / 32.0);
-    }
-
-    private boolean getBit(PrivateLpcaSketch lpca, int bucket)
-    {
-        int b = PrivateLpcaSketch.bitmapByteIndex(bucket);
-        int shift = PrivateLpcaSketch.bitmapBitShift(bucket);
-
-        return ((lpca.getBitmap()[b] >> shift) & 1) == 1;
     }
 
     private int[] getBucketValues(HyperLogLog hll)

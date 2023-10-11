@@ -64,6 +64,12 @@ final class Utils
         return Long.numberOfLeadingZeros(value);
     }
 
+    public static int numberOfTrailingZeros(long hash, int indexBitLength)
+    {
+        long value = hash | (1L << (Long.SIZE - indexBitLength)); // place a 1 in the final position of the prefix to avoid flowing into prefix when the hash happens to be 0
+        return Long.numberOfTrailingZeros(value);
+    }
+
     public static int computeValue(long hash, int indexBitLength)
     {
         return numberOfLeadingZeros(hash, indexBitLength) + 1;
