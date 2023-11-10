@@ -13,21 +13,11 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-public abstract class RandomizationStrategy
+public interface RandomizationStrategy
 {
-    abstract long getRetainedSizeInBytes();
+    double effectiveProbability(double probability);
 
-    public boolean nextBoolean(double probability)
-    {
-        return nextDouble() <= probability;
-    }
+    boolean nextBoolean(double probability);
 
-    abstract double nextDouble();
-
-    public double nextLaplace(double scale)
-    {
-        double quantile = nextDouble();
-        int z = nextDouble() <= 0.5 ? 1 : 0;
-        return (2 * z - 1) * scale * Math.log(quantile);
-    }
+    double nextLaplace(double scale);
 }

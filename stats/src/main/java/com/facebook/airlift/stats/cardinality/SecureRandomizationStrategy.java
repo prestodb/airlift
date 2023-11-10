@@ -13,31 +13,36 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-import org.openjdk.jol.info.ClassLayout;
-
 import java.security.SecureRandom;
 
-/**
- * Note: Due to finite-precision implementation details, usage of floating-point functions
- * as random noise, while cryptographically secure, may leak information from a privacy context.
- * See "On Significance of the Least Significant Bits For Differential Privacy" by Mironov
- * and use judiciously.
- */
 public class SecureRandomizationStrategy
-        extends RandomizationStrategy
+        implements RandomizationStrategy
 {
-    private static final int INSTANCE_SIZE = ClassLayout.parseClass(SecureRandomizationStrategy.class).instanceSize();
-    private static final SecureRandom random = new SecureRandom();
+    private final SecureRandom random;
 
-    public SecureRandomizationStrategy() {}
-
-    public long getRetainedSizeInBytes()
+    public SecureRandomizationStrategy()
     {
-        return INSTANCE_SIZE;
+        this.random = new SecureRandom();
     }
 
-    public double nextDouble()
+    public double effectiveProbability(double probability)
     {
-        return random.nextDouble();
+        return probability;
+    }
+
+    public boolean nextBoolean(double probability)
+    {
+        return random.nextDouble() <= probability;
+    }
+
+    public double nextLaplace(double scale)
+    {
+        // Note: Due to finite-precision implementation details, usage of this as random noise,
+        // while cryptographically secure, may leak information from a privacy context.
+        // See "On Significance of the Least Significant Bits For Differential Privacy" by Mironov
+        // and use judiciously.
+        double quantile = random.nextDouble();
+        int z = random.nextBoolean() ? 1 : 0;
+        return (2 * z - 1) * scale * Math.log(quantile);
     }
 }

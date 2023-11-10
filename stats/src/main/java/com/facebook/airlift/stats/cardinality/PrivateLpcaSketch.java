@@ -39,7 +39,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 @NotThreadSafe
 public class PrivateLpcaSketch
 {
-    private Bitmap bitmap;
+    private byte[] bitmap;
     private final int threshold;
     private final int numberOfBuckets;
     private final double epsilonThreshold;
@@ -82,7 +82,10 @@ public class PrivateLpcaSketch
         threshold = input.readInt();
         epsilonThreshold = input.readDouble();
         epsilonRandomizedResponse = input.readDouble();
-        bitmap = Bitmap.fromSliceInput(input, numberOfBuckets);
+        bitmap = new byte[numberOfBuckets / Byte.SIZE];
+        for (int i = 0; i < bitmap.length; i++) {
+            bitmap[i] = input.readByte();
+        }
     }
 
     private void applyRandomizedResponse()
@@ -90,7 +93,7 @@ public class PrivateLpcaSketch
         double p = getFlipProbability();
         for (int i = 0; i < numberOfBuckets; i++) {
             if (randomizationStrategy.nextBoolean(p)) {
-                bitmap.flipBit(i);
+                flipBit(i);
             }
         }
     }
@@ -99,8 +102,21 @@ public class PrivateLpcaSketch
     {
         double p = getFlipProbability();
         if (randomizationStrategy.nextBoolean(p)) {
-            bitmap.flipBit(bucket);
+            flipBit(bucket);
         }
+    }
+
+    @VisibleForTesting
+    static int bitmapBitShift(int bucket)
+    {
+        return bucket % Byte.SIZE;
+    }
+
+    @VisibleForTesting
+    static int bitmapByteIndex(int bucket)
+    {
+        // n.b.: bucket is 0-indexed
+        return Math.floorDiv(bucket, Byte.SIZE);
     }
 
     public long cardinality()
@@ -139,7 +155,14 @@ public class PrivateLpcaSketch
     }
 
     @VisibleForTesting
-    Bitmap getBitmap()
+    void flipBit(int bucket)
+    {
+        byte oneBit = (byte) (1 << bitmapBitShift(bucket));
+        bitmap[bitmapByteIndex(bucket)] ^= oneBit;
+    }
+
+    @VisibleForTesting
+    byte[] getBitmap()
     {
         return bitmap;
     }
@@ -152,8 +175,8 @@ public class PrivateLpcaSketch
         // So the proportion of bits equal to 1 has expectation:
         // p + (1-2p) T,
         // where T is the true proportion.
-        double probability = getFlipProbability();
-        return (getRawBitProportion() - probability) / (1 - 2 * probability);
+        double effProbability = randomizationStrategy.effectiveProbability(getFlipProbability());
+        return (getRawBitProportion() - effProbability) / (1 - 2 * effProbability);
     }
 
     private double getFlipProbability()
@@ -169,7 +192,11 @@ public class PrivateLpcaSketch
     @VisibleForTesting
     double getRawBitProportion()
     {
-        return (double) bitmap.getBitCount() / numberOfBuckets;
+        double count = 0;
+        for (byte b : bitmap) {
+            count += Integer.bitCount(b & BYTE_MASK);
+        }
+        return count / numberOfBuckets;
     }
 
     public int getThreshold()
@@ -187,9 +214,21 @@ public class PrivateLpcaSketch
                 .appendInt(threshold)
                 .appendDouble(epsilonThreshold)
                 .appendDouble(epsilonRandomizedResponse)
-                .appendBytes(bitmap.toBytes());
+                .appendBytes(bitmap);
 
         return output.slice();
+    }
+
+    @VisibleForTesting
+    void setBit(int bucket, boolean value)
+    {
+        byte oneBit = (byte) (1 << bitmapBitShift(bucket));
+        if (value) {
+            bitmap[bitmapByteIndex(bucket)] |= oneBit;
+        }
+        else {
+            bitmap[bitmapByteIndex(bucket)] &= ~oneBit;
+        }
     }
 
     /**
@@ -206,7 +245,7 @@ public class PrivateLpcaSketch
             // if the new HLL's bucket value is at or below threshold, we don't need to do anything
             // if above threshold, we need to set to 1 and then re-apply randomized response on the bit
             if (value > threshold) {
-                bitmap.setBit(i, true);
+                setBit(i, true);
                 applyRandomizedResponse(i);
             }
         });
@@ -214,7 +253,7 @@ public class PrivateLpcaSketch
 
     private void writeBitmap(HyperLogLog hll)
     {
-        bitmap = new Bitmap(numberOfBuckets);
-        hll.eachBucket((i, value) -> bitmap.setBit(i, value > threshold));
+        bitmap = new byte[numberOfBuckets / Byte.SIZE];
+        hll.eachBucket((i, value) -> setBit(i, value > threshold));
     }
 }

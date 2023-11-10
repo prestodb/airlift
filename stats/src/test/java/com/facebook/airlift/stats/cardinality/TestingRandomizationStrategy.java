@@ -13,23 +13,24 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-enum Format
+/**
+ * A deterministic alternative to randomness (i.e., mock random numbers)
+ */
+public class TestingRandomizationStrategy
+        implements RandomizationStrategy
 {
-    SPARSE_V1(0),
-    DENSE_V1(1),
-    SPARSE_V2(2),
-    DENSE_V2(3),
-    PRIVATE_LPCA_V1(4);
-
-    private byte tag;
-
-    Format(int tag)
+    public double effectiveProbability(double probability)
     {
-        this.tag = (byte) tag;
+        return 0.0;
     }
 
-    public byte getTag()
+    public boolean nextBoolean(double probability)
     {
-        return tag;
+        return false;
+    }
+
+    public double nextLaplace(double scale)
+    {
+        return 0.0;
     }
 }
