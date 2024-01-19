@@ -211,7 +211,10 @@ def build_java_execution(options, daemon):
     system_properties = ['-D%s=%s' % i for i in properties.items()]
     classpath = pathjoin(options.install_path, 'lib', '*')
 
-    command = ['java', '-cp', classpath]
+    java_binary_prefix = ''
+    if os.getenv('JAVA_HOME'):
+        java_binary_prefix = os.getenv('JAVA_HOME') + '/bin/'
+    command = [java_binary_prefix + 'java', '-cp', classpath]
     command += jvm_properties + system_properties
     command += [main_class]
     command += options.arguments
