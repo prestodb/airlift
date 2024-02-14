@@ -63,7 +63,7 @@ public class BenchmarkDenseHll
     @Benchmark
     public DenseHll benchmarkMergeWithSparse(MergeWithSparseData data)
     {
-        return data.base.mergeWith(data.toMerge.toDense());
+        return data.base.mergeWith(data.toMerge);
     }
 
     @State(Scope.Thread)

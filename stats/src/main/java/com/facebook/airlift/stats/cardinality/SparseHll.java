@@ -22,8 +22,6 @@ import io.airlift.slice.SizeOf;
 import io.airlift.slice.Slice;
 import org.openjdk.jol.info.ClassLayout;
 
-import javax.annotation.concurrent.NotThreadSafe;
-
 import java.util.Arrays;
 
 import static com.facebook.airlift.stats.cardinality.Utils.computeIndex;
@@ -36,7 +34,9 @@ import static io.airlift.slice.SizeOf.sizeOf;
 import static java.lang.Math.toIntExact;
 import static java.util.Comparator.comparingInt;
 
-@NotThreadSafe
+/**
+ * This class is NOT thread safe.
+ */
 final class SparseHll
         implements HllInstance
 {
@@ -171,7 +171,7 @@ final class SparseHll
             // if zeros > EXTENDED_BITS_LENGTH - indexBits, it means all those bits were zeros,
             // so look at the entry value, which contains the number of leading 0 *after* EXTENDED_BITS_LENGTH
             int bits = EXTENDED_PREFIX_BITS - indexBitLength;
-            if (zeros > bits) {
+            if (zeros >= bits) {
                 zeros = bits + decodeBucketValue(entry);
             }
 
