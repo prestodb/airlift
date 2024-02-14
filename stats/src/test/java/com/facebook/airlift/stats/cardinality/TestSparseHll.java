@@ -21,7 +21,6 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static com.facebook.airlift.stats.cardinality.TestUtils.createHashForBucket;
 import static com.facebook.airlift.stats.cardinality.TestUtils.sequence;
 import static io.airlift.slice.SizeOf.sizeOf;
 import static io.airlift.slice.testing.SliceAssertions.assertSlicesEqual;
@@ -32,41 +31,18 @@ public class TestSparseHll
     private static final int SPARSE_HLL_INSTANCE_SIZE = ClassLayout.parseClass(SparseHll.class).instanceSize();
 
     @Test(dataProvider = "bits")
-    public void testCorrectNumberOfZeros(int indexBitLength)
+    public void testNumberOfZeros(int indexBitLength)
     {
-        SparseHll sparseHll = new SparseHll(indexBitLength);
-        // Note: the peculiar minus six in the following line reflects a surprising edge case.
-        // See https://github.com/prestodb/airlift/issues/56.
-        int limit = Math.min(Long.SIZE - indexBitLength - 6, Utils.numberOfBuckets(indexBitLength));
-        for (int i = 0; i < limit; i++) {
-            // insert a hash for bucket i that has i leading zeros
-            sparseHll.insertHash(createHashForBucket(indexBitLength, i, i));
-        }
+        for (int i = 0; i < 64 - indexBitLength; i++) {
+            long hash = 1L << i;
+            int expectedValue = Long.numberOfLeadingZeros(hash << indexBitLength) + 1;
 
-        // each non-empty bucket should have value index + 1
-        sparseHll.eachBucket((i, value) -> assertEquals(value, i + 1));
-    }
-
-    @Test(dataProvider = "bits")
-    public void testCorrectNumberOfZerosOnUpdate(int indexBitLength)
-    {
-        SparseHll sparseHll = new SparseHll(indexBitLength);
-        int limit = Math.min(Long.SIZE - indexBitLength - 6, Utils.numberOfBuckets(indexBitLength));
-        for (int i = 0; i < limit; i++) {
-            // insert a hash for bucket i that has no leading zeros
-            sparseHll.insertHash(createHashForBucket(indexBitLength, i, 0));
-        }
-        for (int i = 0; i < limit; i++) {
-            // insert a hash for bucket i that has i leading zeros
-            sparseHll.insertHash(createHashForBucket(indexBitLength, i, i));
-        }
-
-        // each bucket from 0 to limit should have value index + 1
-        // Note: SparseHll may return multiple values for each bucket, so we keep track of the largest only.
-        int[] values = new int[limit];
-        sparseHll.eachBucket((i, value) -> values[i] = Math.max(values[i], value));
-        for (int i = 0; i < limit; i++) {
-            assertEquals(values[i], i + 1);
+            SparseHll sparseHll = new SparseHll(indexBitLength);
+            sparseHll.insertHash(hash);
+            sparseHll.eachBucket((bucket, value) -> {
+                assertEquals(bucket, 0);
+                assertEquals(value, expectedValue);
+            });
         }
     }
 

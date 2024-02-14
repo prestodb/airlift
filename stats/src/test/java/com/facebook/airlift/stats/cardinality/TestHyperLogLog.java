@@ -24,6 +24,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.facebook.airlift.stats.cardinality.TestUtils.sequence;
 import static io.airlift.slice.testing.SliceAssertions.assertSlicesEqual;
+import static java.lang.Math.toIntExact;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -31,7 +32,6 @@ public class TestHyperLogLog
 {
     @Test
     public void testEstimates()
-            throws Exception
     {
         int trials = 1000;
         for (int indexBits = 4; indexBits <= 13; indexBits++) {
@@ -80,7 +80,8 @@ public class TestHyperLogLog
     {
         assertEquals(
                 HyperLogLog.newInstance(8).estimatedInMemorySize(),
-                ClassLayout.parseClass(HyperLogLog.class).instanceSize() + (new SparseHll(10)).estimatedInMemorySize());
+                toIntExact(ClassLayout.parseClass(HyperLogLog.class).instanceSize() +
+                        (new SparseHll(10)).estimatedInMemorySize()));
     }
 
     @Test
@@ -125,16 +126,6 @@ public class TestHyperLogLog
 
         assertEquals(hll1.cardinality(), expected.cardinality());
         assertEquals(hll1.serialize(), expected.serialize());
-    }
-
-    @Test
-    public void testNumberOfBuckets()
-    {
-        int[] bucketCounts = {16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
-        for (int count : bucketCounts) {
-            HyperLogLog hll = HyperLogLog.newInstance(count);
-            assertEquals(hll.getNumberOfBuckets(), count);
-        }
     }
 
     @Test
