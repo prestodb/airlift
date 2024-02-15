@@ -31,7 +31,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  * SfmSketch is created in a non-private mode. Privacy must be enabled through the enablePrivacy() function.
  * Once made private, the sketch becomes immutable. Privacy is quantified by the parameter epsilon.
  * <p>
- * When epsilon > 0, the sketch is epsilon-DP, and bits are randomized to preserve privacy.
+ * When epsilon is greater than 0, the sketch is epsilon-DP, and bits are randomized to preserve privacy.
  * When epsilon == NON_PRIVATE_EPSILON, the sketch is not private, and bits are set deterministically.
  * <p>
  * The best accuracy comes with NON_PRIVATE_EPSILON. For private epsilons, larger gives more accuracy,
