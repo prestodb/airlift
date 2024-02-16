@@ -195,7 +195,7 @@ def build_java_execution(options, daemon):
         properties['log.levels-file'] = options.log_levels
 
     if daemon:
-        properties['log.output-file'] = options.server_log
+        properties['log.path'] = options.server_log
         properties['log.enable-console'] = 'false'
 
     jvm_properties = load_lines(options.jvm_config)
@@ -373,7 +373,7 @@ def parse_properties(parser, args):
         key, value = [i.strip() for i in arg.split('=', 1)]
         if key == 'config':
             parser.error('cannot specify config using -D option (use --config)')
-        if key == 'log.output-file':
+        if key == 'log.path':
             parser.error('cannot specify server log using -D option (use --server-log-file)')
         if key == 'log.levels-file':
             parser.error('cannot specify log levels using -D option (use --log-levels-file)')
