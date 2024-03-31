@@ -30,6 +30,7 @@ import static com.facebook.airlift.node.NodeConfig.AddressSource.HOSTNAME;
 import static com.facebook.airlift.node.NodeConfig.AddressSource.IP;
 import static com.facebook.airlift.testing.ValidationAssertions.assertFailsValidation;
 import static com.facebook.airlift.testing.ValidationAssertions.assertValidates;
+import static org.testng.Assert.assertEquals;
 
 public class TestNodeConfig
 {
@@ -78,6 +79,54 @@ public class TestNodeConfig
                 .setInternalAddressSource(HOSTNAME);
 
         ConfigAssertions.assertFullMapping(properties, expected);
+    }
+
+    @Test
+    public void testSingleEnvironmentVariableSubstitution()
+    {
+        NodeConfig config = new NodeConfig()
+                .setEnvironment("${ENV:TEST_ENVIRONMENT}")
+                .setPool("${ENV:TEST_POOL}")
+                .setNodeId("${ENV:TEST_NODE_ID}")
+                .setLocation("${ENV:TEST_LOCATION}")
+                .setNodeInternalAddress("${ENV:TEST_NODE_INTERNAL_ADDRESS}")
+                .setNodeExternalAddress("${ENV:TEST_NODE_EXTERNAL_ADDRESS}")
+                .setNodeBindIp("${ENV:TEST_NODE_BIND_IP}")
+                .setBinarySpec("${ENV:TEST_BINARY_SPEC}")
+                .setConfigSpec("${ENV:TEST_CONFIG_SPEC}");
+
+        assertEquals(config.getEnvironment(), "environment");
+        assertEquals(config.getPool(), "pool");
+        assertEquals(config.getNodeId(), "node-id");
+        assertEquals(config.getLocation(), "location");
+        assertEquals(config.getNodeInternalAddress(), "node-internal-address");
+        assertEquals(config.getNodeExternalAddress(), "node-external-address");
+        assertEquals(config.getNodeBindIp().getHostAddress(), "10.11.12.13");
+        assertEquals(config.getBinarySpec(), "binary-spec");
+        assertEquals(config.getConfigSpec(), "config-spec");
+    }
+
+    @Test
+    public void testMultipleEnvironmentVariableSubstitution()
+    {
+        NodeConfig config = new NodeConfig()
+                .setEnvironment("${ENV:TEST_PREFIX}-${ENV:TEST_ENVIRONMENT}")
+                .setPool("${ENV:TEST_PREFIX}-${ENV:TEST_POOL}")
+                .setNodeId("${ENV:TEST_PREFIX}-${ENV:TEST_NODE_ID}")
+                .setLocation("${ENV:TEST_PREFIX}-${ENV:TEST_LOCATION}")
+                .setNodeInternalAddress("${ENV:TEST_PREFIX}-${ENV:TEST_NODE_INTERNAL_ADDRESS}")
+                .setNodeExternalAddress("${ENV:TEST_PREFIX}-${ENV:TEST_NODE_EXTERNAL_ADDRESS}")
+                .setBinarySpec("${ENV:TEST_PREFIX}-${ENV:TEST_BINARY_SPEC}")
+                .setConfigSpec("${ENV:TEST_PREFIX}-${ENV:TEST_CONFIG_SPEC}");
+
+        assertEquals(config.getEnvironment(), "test-environment");
+        assertEquals(config.getPool(), "test-pool");
+        assertEquals(config.getNodeId(), "test-node-id");
+        assertEquals(config.getLocation(), "test-location");
+        assertEquals(config.getNodeInternalAddress(), "test-node-internal-address");
+        assertEquals(config.getNodeExternalAddress(), "test-node-external-address");
+        assertEquals(config.getBinarySpec(), "test-binary-spec");
+        assertEquals(config.getConfigSpec(), "test-config-spec");
     }
 
     @Test

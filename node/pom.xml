@@ -59,5 +59,41 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-</project>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test</id>
+                        <phase>test</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <environmentVariables>
+                        <TEST_PREFIX>test</TEST_PREFIX>
+                        <TEST_ENVIRONMENT>environment</TEST_ENVIRONMENT>
+                        <TEST_POOL>pool</TEST_POOL>
+                        <TEST_NODE_ID>node-id</TEST_NODE_ID>
+                        <TEST_LOCATION>location</TEST_LOCATION>
+                        <TEST_NODE_INTERNAL_ADDRESS>node-internal-address</TEST_NODE_INTERNAL_ADDRESS>
+                        <TEST_NODE_EXTERNAL_ADDRESS>node-external-address</TEST_NODE_EXTERNAL_ADDRESS>
+                        <TEST_NODE_BIND_IP>10.11.12.13</TEST_NODE_BIND_IP>
+                        <TEST_BINARY_SPEC>binary-spec</TEST_BINARY_SPEC>
+                        <TEST_CONFIG_SPEC>config-spec</TEST_CONFIG_SPEC>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.gaul</groupId>
+                <artifactId>modernizer-maven-plugin</artifactId>
+                <configuration>
+                    <!-- Ignore class com.facebook.airlift.node.NodeConfig because StringBuffer is used-->
+                    <ignoreClassNamePatterns>com.facebook.airlift.node.NodeConfig</ignoreClassNamePatterns>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
