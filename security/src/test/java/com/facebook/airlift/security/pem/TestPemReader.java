@@ -189,8 +189,7 @@ public class TestPemReader
         if (!matcher.find()) {
             throw new KeyStoreException("did not find a private key");
         }
-        byte[] data = PemReader.base64Decode(matcher.group(2));
-        return data;
+        return PemReader.base64Decode(matcher.group(2));
     }
 
     private static File getResourceFile(String name)

@@ -75,8 +75,7 @@ public class ThriftMapper
     {
         try {
             ThriftCodec<?> codec = thriftCodecManager.getCodec(genericType);
-            Object value = ThriftProtocolUtils.read(codec, getThriftProtocol(mediaType, codec), inputStream);
-            return value;
+            return ThriftProtocolUtils.read(codec, getThriftProtocol(mediaType, codec), inputStream);
         }
         catch (Exception e) {
             // we want to return a 400 for bad Thrift but not for a real IO exception
