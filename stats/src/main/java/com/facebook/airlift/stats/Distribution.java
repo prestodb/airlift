@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.util.Objects.requireNonNull;
 
 @ThreadSafe
 public class Distribution
@@ -60,7 +61,12 @@ public class Distribution
         digest.add(value, count);
         total.add(value * count);
     }
-
+    public synchronized void merge(Distribution distribution)
+    {
+        requireNonNull(distribution, "distribution is null");
+        total.merge(distribution.total);
+        digest.merge(distribution.digest);
+    }
     @Managed
     public synchronized double getMaxError()
     {
