@@ -88,8 +88,7 @@ public class JaxrsModule
     @TheServlet
     public static Map<String, String> createTheServletParams()
     {
-        Map<String, String> initParams = new HashMap<>();
-        return initParams;
+        return new HashMap<>();
     }
 
     public static class JaxRsApplication
