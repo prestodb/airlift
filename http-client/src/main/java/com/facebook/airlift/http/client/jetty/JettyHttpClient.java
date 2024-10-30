@@ -161,25 +161,23 @@ public class JettyHttpClient
         sslContextFactory.setEndpointIdentificationAlgorithm("HTTPS");
         if (config.getKeyStorePath() != null) {
             Optional<KeyStore> pemKeyStore = tryLoadPemKeyStore(config);
-            if (pemKeyStore.isPresent()) {
-                sslContextFactory.setKeyStore(pemKeyStore.get());
+            pemKeyStore.ifPresentOrElse(keyStore -> {
+                sslContextFactory.setKeyStore(keyStore);
                 sslContextFactory.setKeyStorePassword("");
-            }
-            else {
+            }, () -> {
                 sslContextFactory.setKeyStorePath(config.getKeyStorePath());
                 sslContextFactory.setKeyStorePassword(config.getKeyStorePassword());
-            }
+            });
         }
         if (config.getTrustStorePath() != null) {
             Optional<KeyStore> pemTrustStore = tryLoadPemTrustStore(config);
-            if (pemTrustStore.isPresent()) {
-                sslContextFactory.setTrustStore(pemTrustStore.get());
+            pemTrustStore.ifPresentOrElse(trustStore -> {
+                sslContextFactory.setTrustStore(trustStore);
                 sslContextFactory.setTrustStorePassword("");
-            }
-            else {
+            }, () -> {
                 sslContextFactory.setTrustStorePath(config.getTrustStorePath());
                 sslContextFactory.setTrustStorePassword(config.getTrustStorePassword());
-            }
+            });
         }
         sslContextFactory.setSecureRandomAlgorithm(config.getSecureRandomAlgorithm());
         List<String> includedCipherSuites = config.getHttpsIncludedCipherSuites();

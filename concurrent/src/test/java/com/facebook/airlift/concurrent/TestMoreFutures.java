@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import io.airlift.units.Duration;
+import org.gaul.modernizer_maven_annotations.SuppressModernizer;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
@@ -55,6 +56,7 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 @SuppressWarnings("deprecation")
+@SuppressModernizer
 public class TestMoreFutures
 {
     private final ScheduledExecutorService executorService = newSingleThreadScheduledExecutor(daemonThreadsNamed("test-%s"));

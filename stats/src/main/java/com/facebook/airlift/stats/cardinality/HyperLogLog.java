@@ -13,9 +13,9 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
+import com.facebook.slice.Murmur3Hash128;
+import com.facebook.slice.Slice;
 import com.google.common.annotations.VisibleForTesting;
-import io.airlift.slice.Murmur3Hash128;
-import io.airlift.slice.Slice;
 import org.openjdk.jol.info.ClassLayout;
 
 import static com.facebook.airlift.stats.cardinality.Utils.indexBitLength;
@@ -68,7 +68,7 @@ public class HyperLogLog
      * Adds a value that has already been hashed to the set of values tracked by this HyperLogLog instance.
      *
      * @param hash The hash should be the 64 least significant bits of the murmur3_128 hash of the value.
-     * For example: io.airlift.slice.Murmur3.hash64(value).
+     * For example: com.facebook.slice.Murmur3.hash64(value).
      */
     public void addHash(long hash)
     {

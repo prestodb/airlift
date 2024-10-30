@@ -77,10 +77,10 @@ public class TestJaxrsThriftTestingHttpProcessor
         httpClient =
                 new TestingHttpClient(
                         new JaxrsTestingHttpProcessor(
-                            URI.create("http://fake.invalid/"),
-                            new Resource(),
-                            new ThriftMapper(codecManager),
-                            new ParsingExceptionMapper()));
+                                URI.create("http://fake.invalid/"),
+                                new Resource(),
+                                new ThriftMapper(codecManager),
+                                new ParsingExceptionMapper()));
         testThriftMessageThriftCodec = codecManager.getCodec(TestThriftMessage.class);
         testThriftMessageTestThriftResponseHandler = new ThriftResponseHandler<>(testThriftMessageThriftCodec);
     }

@@ -32,12 +32,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.facebook.airlift.event.client.EventDataType.validateFieldValueType;
-import static com.google.common.base.MoreObjects.firstNonNull;
+import static java.util.Objects.requireNonNullElse;
 
 @Beta
 public class EventFieldMetadata
 {
-    public static enum ContainerType
+    public enum ContainerType
     {
         ITERABLE, MAP, MULTIMAP;
 
@@ -94,7 +94,7 @@ public class EventFieldMetadata
             return method.invoke(event);
         }
         catch (Exception e) {
-            throw new InvalidEventException(firstNonNull(e.getCause(), e),
+            throw new InvalidEventException(requireNonNullElse(e.getCause(), e),
                     "Unable to get value of event field %s: Exception occurred while invoking [%s]", name, method.toGenericString());
         }
     }
@@ -111,19 +111,23 @@ public class EventFieldMetadata
         Object value = getValue(event);
         if (value != null) {
             jsonGenerator.writeFieldName(name);
-            if (containerType.isPresent()) {
-                if (containerType.get() == ContainerType.ITERABLE) {
+            ContainerType type = containerType.orElse(null);
+            switch (type) {
+                case ITERABLE -> {
                     validateFieldValueType(value, Iterable.class);
                     writeArray(jsonGenerator, (Iterable<?>) value, objectStack);
                 }
-                else if (containerType.get() == ContainerType.MAP) {
+                case MAP -> {
                     validateFieldValueType(value, Map.class);
                     writeMap(jsonGenerator, (Map<?, ?>) value, objectStack);
                 }
-                else if (containerType.get() == ContainerType.MULTIMAP) {
+                case MULTIMAP -> {
                     validateFieldValueType(value, Multimap.class);
                     writeMultimap(jsonGenerator, (Multimap<?, ?>) value, objectStack);
                 }
+                case null -> { /* no-op */ }
+            }
+            if (type != null) {
                 return;
             }
             writeFieldValue(jsonGenerator, value, objectStack);
@@ -133,11 +137,12 @@ public class EventFieldMetadata
     private void writeFieldValue(JsonGenerator jsonGenerator, Object value, Deque<Object> objectStack)
             throws IOException
     {
-        if (eventDataType.isPresent()) {
-            eventDataType.get().writeFieldValue(jsonGenerator, value);
+        EventDataType dataType = eventDataType.orElse(null);
+        if (dataType != null) {
+            dataType.writeFieldValue(jsonGenerator, value);
         }
         else {
-            validateFieldValueType(value, nestedType.get().getEventClass());
+            validateFieldValueType(value, nestedType.orElseThrow().getEventClass());
             writeObject(jsonGenerator, value, objectStack);
         }
     }
@@ -180,7 +185,7 @@ public class EventFieldMetadata
         checkForCycles(value, objectStack);
         objectStack.push(value);
         jsonGenerator.writeStartObject();
-        for (EventFieldMetadata field : nestedType.get().getFields()) {
+        for (EventFieldMetadata field : nestedType.orElseThrow().getFields()) {
             field.writeField(jsonGenerator, value, objectStack);
         }
         jsonGenerator.writeEndObject();

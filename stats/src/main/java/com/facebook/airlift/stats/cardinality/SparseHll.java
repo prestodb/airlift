@@ -13,13 +13,13 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
+import com.facebook.slice.BasicSliceInput;
+import com.facebook.slice.DynamicSliceOutput;
+import com.facebook.slice.SizeOf;
+import com.facebook.slice.Slice;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
-import io.airlift.slice.BasicSliceInput;
-import io.airlift.slice.DynamicSliceOutput;
-import io.airlift.slice.SizeOf;
-import io.airlift.slice.Slice;
 import org.openjdk.jol.info.ClassLayout;
 
 import java.util.Arrays;
@@ -28,9 +28,9 @@ import static com.facebook.airlift.stats.cardinality.Utils.computeIndex;
 import static com.facebook.airlift.stats.cardinality.Utils.linearCounting;
 import static com.facebook.airlift.stats.cardinality.Utils.numberOfBuckets;
 import static com.facebook.airlift.stats.cardinality.Utils.numberOfLeadingZeros;
+import static com.facebook.slice.SizeOf.sizeOf;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static io.airlift.slice.SizeOf.sizeOf;
 import static java.lang.Math.toIntExact;
 import static java.util.Comparator.comparingInt;
 

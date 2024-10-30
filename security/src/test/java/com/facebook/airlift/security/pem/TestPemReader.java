@@ -45,7 +45,7 @@ import static com.facebook.airlift.security.pem.PemReader.rsaPkcs1ToPkcs8;
 import static com.facebook.airlift.security.pem.PemWriter.writeCertificate;
 import static com.facebook.airlift.security.pem.PemWriter.writePrivateKey;
 import static com.facebook.airlift.security.pem.PemWriter.writePublicKey;
-import static com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.io.Files.asCharSource;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.testng.Assert.assertEquals;
@@ -123,7 +123,7 @@ public class TestPemReader
     {
         PublicKey publicKey = loadPublicKey(getResourceFile(keyFile));
         assertNotNull(publicKey);
-        X509Certificate certificate = getOnlyElement(readCertificateChain(getResourceFile(certFile)));
+        X509Certificate certificate = readCertificateChain(getResourceFile(certFile)).stream().collect(onlyElement());
         assertEquals(publicKey, certificate.getPublicKey());
 
         String encodedPrivateKey = writePublicKey(publicKey);
@@ -170,7 +170,7 @@ public class TestPemReader
 
         assertX509Certificate(x509Certificate, expectedName);
 
-        X509Certificate certificateCopy = getOnlyElement(readCertificateChain(writeCertificate(x509Certificate)));
+        X509Certificate certificateCopy = readCertificateChain(writeCertificate(x509Certificate)).stream().collect(onlyElement());
         assertX509Certificate(certificateCopy, expectedName);
     }
 

@@ -13,6 +13,9 @@
     <properties>
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
         <main-class>com.facebook.airlift.sample.Main</main-class>
+        <air.test.jvm.additional-arguments>
+            --add-opens java.base/java.lang=ALL-UNNAMED
+        </air.test.jvm.additional-arguments>
     </properties>
 
     <dependencies>
@@ -118,7 +121,7 @@
         </dependency>
 
         <dependency>
-            <groupId>io.airlift</groupId>
+            <groupId>com.facebook.airlift</groupId>
             <artifactId>units</artifactId>
         </dependency>
 
@@ -135,6 +138,7 @@
         <dependency>
             <groupId>com.facebook.airlift</groupId>
             <artifactId>http-client</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- for testing -->

@@ -34,7 +34,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.google.inject.Guice;
@@ -48,7 +47,6 @@ import org.testng.annotations.Test;
 
 import javax.servlet.Filter;
 import javax.servlet.Servlet;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -75,6 +73,7 @@ import static com.google.common.net.HttpHeaders.REFERER;
 import static com.google.common.net.HttpHeaders.USER_AGENT;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
+import static java.io.OutputStream.nullOutputStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.nCopies;
 import static org.testng.Assert.assertEquals;
@@ -347,9 +346,9 @@ public class TestHttpServerModule
 
         @Override
         protected void service(HttpServletRequest request, HttpServletResponse response)
-                throws ServletException, IOException
+                throws IOException
         {
-            ByteStreams.copy(request.getInputStream(), ByteStreams.nullOutputStream());
+            request.getInputStream().transferTo(nullOutputStream());
 
             remoteAddress = request.getRemoteAddr();
             for (Entry<String, String> entry : responseHeaders.entries()) {

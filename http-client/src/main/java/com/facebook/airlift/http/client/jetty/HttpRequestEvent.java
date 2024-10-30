@@ -167,12 +167,8 @@ class HttpRequestEvent
             method = method.toUpperCase(Locale.US);
         }
 
-        long responseSize = NO_RESPONSE;
-        int responseCode = NO_RESPONSE;
-        if (response.isPresent()) {
-            responseSize = responseInfo.getResponseSize();
-            responseCode = response.get().getStatus();
-        }
+        long responseSize = response.map(unused -> responseInfo.getResponseSize()).orElse((long) NO_RESPONSE);
+        int responseCode = response.map(Response::getStatus).orElse(NO_RESPONSE);
 
         long requestTotalTimeNanos = responseInfo.getResponseCompleteTimestamp() - requestInfo.getRequestCreatedTimestamp();
         long requestBeginToRequestEndNanos = requestInfo.getRequestEndTimestamp() - requestInfo.getRequestBeginTimestamp();
@@ -208,17 +204,14 @@ class HttpRequestEvent
     {
         Optional<Throwable> failure = responseInfo.getFailureCause();
 
-        if (!failure.isPresent()) {
-            return Optional.empty();
-        }
+        return failure.map(throwable -> {
+            String className = throwable.getClass().getSimpleName().toUpperCase(Locale.US);
 
-        String className = failure.get().getClass().getSimpleName().toUpperCase(Locale.US);
-
-        if (className.endsWith("EXCEPTION")) {
-            return Optional.of(className.substring(0, className.lastIndexOf("EXCEPTION")));
-        }
-
-        return Optional.of(className);
+            if (className.endsWith("EXCEPTION")) {
+                return className.substring(0, className.lastIndexOf("EXCEPTION"));
+            }
+            return className;
+        });
     }
 
     @Nullable

@@ -29,11 +29,11 @@ class JettyAsyncSocketAddressResolver
     public void resolve(String host, int port, Promise<List<InetSocketAddress>> promise)
     {
         Optional<InetAddress> address = resolve(host);
-        if (address.isPresent()) {
-            promise.succeeded(ImmutableList.of(new InetSocketAddress(address.get(), port)));
-            return;
-        }
-        super.resolve(host, port, promise);
+        address.ifPresentOrElse(addr -> {
+            promise.succeeded(ImmutableList.of(new InetSocketAddress(addr, port)));
+        }, () -> {
+            super.resolve(host, port, promise);
+        });
     }
 
     private static Optional<InetAddress> resolve(String host)

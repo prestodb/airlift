@@ -1,5 +1,6 @@
 package com.facebook.airlift.concurrent;
 
+import com.google.common.collect.Streams;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.FutureCallback;
@@ -29,15 +30,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.propagateIfPossible;
 import static com.google.common.base.Throwables.throwIfInstanceOf;
-import static com.google.common.collect.Iterables.isEmpty;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class MoreFutures
@@ -87,7 +87,7 @@ public final class MoreFutures
     public static Throwable unwrapCompletionException(Throwable throwable)
     {
         if (throwable instanceof CompletionException) {
-            return firstNonNull(throwable.getCause(), throwable);
+            return requireNonNullElse(throwable.getCause(), throwable);
         }
         return throwable;
     }
@@ -277,7 +277,7 @@ public final class MoreFutures
     public static <V> ListenableFuture<V> whenAnyComplete(Iterable<? extends ListenableFuture<? extends V>> futures)
     {
         requireNonNull(futures, "futures is null");
-        checkArgument(!isEmpty(futures), "futures is empty");
+        checkArgument(Streams.stream(futures).findAny().isPresent(), "futures is empty");
 
         ExtendedSettableFuture<V> firstCompletedFuture = ExtendedSettableFuture.create();
         for (ListenableFuture<? extends V> future : futures) {
@@ -298,7 +298,7 @@ public final class MoreFutures
     public static <V> ListenableFuture<V> whenAnyCompleteCancelOthers(Iterable<? extends ListenableFuture<? extends V>> futures)
     {
         requireNonNull(futures, "futures is null");
-        checkArgument(!isEmpty(futures), "futures is empty");
+        checkArgument(Streams.stream(futures).findAny().isPresent(), "futures is empty");
 
         // wait for the first task to unblock and then cancel all futures to free up resources
         ListenableFuture<V> anyComplete = whenAnyComplete(futures);
@@ -332,7 +332,7 @@ public final class MoreFutures
     public static <V> CompletableFuture<V> firstCompletedFuture(Iterable<? extends CompletionStage<? extends V>> futures, boolean propagateCancel)
     {
         requireNonNull(futures, "futures is null");
-        checkArgument(!isEmpty(futures), "futures is empty");
+        checkArgument(Streams.stream(futures).findAny().isPresent(), "futures is empty");
 
         CompletableFuture<V> future = new CompletableFuture<>();
         for (CompletionStage<? extends V> stage : futures) {

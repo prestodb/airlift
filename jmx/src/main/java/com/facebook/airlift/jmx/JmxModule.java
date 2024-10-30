@@ -47,13 +47,9 @@ public class JmxModule
 
         discoveryBinder(binder).bindServiceAnnouncement(JmxAnnouncementProvider.class);
 
-        if (JavaVersion.current().getMajor() < 9) {
-            binder.bind(JmxAgent8.class).in(Scopes.SINGLETON);
-            binder.bind(JmxAgent.class).to(JmxAgent8.class);
-        }
-        else {
-            binder.bind(JmxAgent9.class).in(Scopes.SINGLETON);
-            binder.bind(JmxAgent.class).to(JmxAgent9.class);
+        if (JavaVersion.current().getMajor() == 21) {
+            binder.bind(JmxAgent21.class).in(Scopes.SINGLETON);
+            binder.bind(JmxAgent.class).to(JmxAgent21.class);
         }
     }
 

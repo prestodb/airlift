@@ -15,6 +15,7 @@ package com.facebook.airlift.http.server;
 
 import com.facebook.airlift.log.Logger;
 import com.sun.security.auth.module.Krb5LoginModule;
+import org.gaul.modernizer_maven_annotations.SuppressModernizer;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
@@ -117,6 +118,7 @@ public class KerberosAuthenticator
         }
     }
 
+    @SuppressModernizer
     @Override
     public Principal authenticate(HttpServletRequest request)
             throws AuthenticationException
