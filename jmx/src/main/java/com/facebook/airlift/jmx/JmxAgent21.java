@@ -30,7 +30,7 @@ import java.util.Properties;
 
 import static java.lang.String.format;
 
-class JmxAgent9
+class JmxAgent21
         implements JmxAgent
 {
     private static final Logger log = Logger.get(JmxAgent.class);
@@ -42,7 +42,7 @@ class JmxAgent9
     private final JMXServiceURL url;
 
     @Inject
-    public JmxAgent9(JmxConfig config)
+    public JmxAgent21(JmxConfig config)
             throws IOException
     {
         int registryPort;
@@ -151,7 +151,7 @@ class JmxAgent9
     public static void main(String[] args)
             throws IOException
     {
-        new JmxAgent9(new JmxConfig());
-        new JmxAgent9(new JmxConfig());
+        new JmxAgent21(new JmxConfig());
+        new JmxAgent21(new JmxConfig());
     }
 }

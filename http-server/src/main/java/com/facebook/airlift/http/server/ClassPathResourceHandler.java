@@ -16,7 +16,6 @@
 package com.facebook.airlift.http.server;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteStreams;
 import com.google.common.net.HttpHeaders;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.MimeTypes;
@@ -134,7 +133,7 @@ public class ClassPathResourceHandler
                 return;
             }
 
-            ByteStreams.copy(resourceStream, response.getOutputStream());
+            resourceStream.transferTo(response.getOutputStream());
         }
         finally {
             closeQuietly(resourceStream);

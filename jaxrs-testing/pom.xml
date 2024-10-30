@@ -60,21 +60,25 @@
         <dependency>
             <groupId>com.facebook.drift</groupId>
             <artifactId>drift-codec</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>com.facebook.drift</groupId>
             <artifactId>drift-transport-netty</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>com.facebook.drift</groupId>
             <artifactId>drift-api</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>com.facebook.drift</groupId>
             <artifactId>drift-protocol</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- for testing -->

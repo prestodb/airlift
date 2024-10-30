@@ -24,7 +24,6 @@ import com.facebook.airlift.tracetoken.TraceTokenManager;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.primitives.Ints;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.jmx.MBeanContainer;
@@ -82,7 +81,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 
 import static com.facebook.airlift.http.utils.jetty.ConcurrentScheduler.createConcurrentScheduler;
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.toIntExact;
@@ -91,6 +89,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static java.util.Collections.list;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class HttpServer
@@ -131,7 +130,7 @@ public class HttpServer
 
         QueuedThreadPool threadPool = new QueuedThreadPool(config.getMaxThreads());
         threadPool.setMinThreads(config.getMinThreads());
-        threadPool.setIdleTimeout(Ints.checkedCast(config.getThreadMaxIdleTime().toMillis()));
+        threadPool.setIdleTimeout(toIntExact(config.getThreadMaxIdleTime().toMillis()));
         threadPool.setName("http-worker");
         threadPool.setDetailedDump(true);
         server = new Server(threadPool);
@@ -194,8 +193,8 @@ public class HttpServer
                     server,
                     null,
                     concurrentScheduler,
-                    firstNonNull(acceptors, -1),
-                    firstNonNull(selectors, -1),
+                    requireNonNullElse(acceptors, -1),
+                    requireNonNullElse(selectors, -1),
                     http1,
                     http2c);
             httpConnector.setName("http");
@@ -227,27 +226,25 @@ public class HttpServer
 
             SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
             Optional<KeyStore> pemKeyStore = tryLoadPemKeyStore(config);
-            if (pemKeyStore.isPresent()) {
-                sslContextFactory.setKeyStore(pemKeyStore.get());
+            pemKeyStore.ifPresentOrElse(keyStore -> {
+                sslContextFactory.setKeyStore(keyStore);
                 sslContextFactory.setKeyStorePassword("");
-            }
-            else {
+            }, () -> {
                 sslContextFactory.setKeyStorePath(config.getKeystorePath());
                 sslContextFactory.setKeyStorePassword(config.getKeystorePassword());
                 if (config.getKeyManagerPassword() != null) {
                     sslContextFactory.setKeyManagerPassword(config.getKeyManagerPassword());
                 }
-            }
+            });
             if (config.getTrustStorePath() != null) {
                 Optional<KeyStore> pemTrustStore = tryLoadPemTrustStore(config);
-                if (pemTrustStore.isPresent()) {
-                    sslContextFactory.setTrustStore(pemTrustStore.get());
+                pemTrustStore.ifPresentOrElse(trustStore -> {
+                    sslContextFactory.setTrustStore(trustStore);
                     sslContextFactory.setTrustStorePassword("");
-                }
-                else {
+                }, () -> {
                     sslContextFactory.setTrustStorePath(config.getTrustStorePath());
                     sslContextFactory.setTrustStorePassword(config.getTrustStorePassword());
-                }
+                });
             }
 
             sslContextFactory.setIncludeCipherSuites(includedCipherSuites.toArray(new String[0]));
@@ -265,8 +262,8 @@ public class HttpServer
                     server,
                     null,
                     concurrentScheduler,
-                    firstNonNull(acceptors, -1),
-                    firstNonNull(selectors, -1),
+                    requireNonNullElse(acceptors, -1),
+                    requireNonNullElse(selectors, -1),
                     sslConnectionFactory,
                     new HttpConnectionFactory(httpsConfiguration));
             httpsConnector.setName("https");
@@ -295,7 +292,7 @@ public class HttpServer
             QueuedThreadPool adminThreadPool = new QueuedThreadPool(config.getAdminMaxThreads());
             adminThreadPool.setName("http-admin-worker");
             adminThreadPool.setMinThreads(config.getAdminMinThreads());
-            adminThreadPool.setIdleTimeout(Ints.checkedCast(config.getThreadMaxIdleTime().toMillis()));
+            adminThreadPool.setIdleTimeout(toIntExact(config.getThreadMaxIdleTime().toMillis()));
 
             if (config.isHttpsEnabled()) {
                 adminConfiguration.addCustomizer(new SecureRequestCustomizer());

@@ -26,9 +26,9 @@ import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class MockUriInfo
@@ -184,12 +184,7 @@ public class MockUriInfo
 
     private static String urlDecode(String value)
     {
-        try {
-            return URLDecoder.decode(value, "UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException(e);
-        }
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
     @Override

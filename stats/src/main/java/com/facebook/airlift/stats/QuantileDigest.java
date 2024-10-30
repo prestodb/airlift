@@ -1,5 +1,11 @@
 package com.facebook.airlift.stats;
 
+import com.facebook.slice.BasicSliceInput;
+import com.facebook.slice.DynamicSliceOutput;
+import com.facebook.slice.SizeOf;
+import com.facebook.slice.Slice;
+import com.facebook.slice.SliceInput;
+import com.facebook.slice.SliceOutput;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Ticker;
@@ -10,12 +16,6 @@ import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.util.concurrent.AtomicDouble;
-import io.airlift.slice.BasicSliceInput;
-import io.airlift.slice.DynamicSliceOutput;
-import io.airlift.slice.SizeOf;
-import io.airlift.slice.Slice;
-import io.airlift.slice.SliceInput;
-import io.airlift.slice.SliceOutput;
 import org.openjdk.jol.info.ClassLayout;
 
 import javax.annotation.concurrent.NotThreadSafe;

@@ -12,6 +12,9 @@
 
     <properties>
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
+        <air.test.jvm.additional-arguments>
+            --add-opens java.base/java.lang=ALL-UNNAMED
+        </air.test.jvm.additional-arguments>
     </properties>
 
     <dependencies>
@@ -23,6 +26,7 @@
         <dependency>
             <groupId>com.facebook.airlift</groupId>
             <artifactId>json</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -58,6 +62,7 @@
         <dependency>
             <groupId>org.weakref</groupId>
             <artifactId>jmxutils</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>

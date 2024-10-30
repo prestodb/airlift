@@ -16,6 +16,7 @@
 package com.facebook.airlift.http.server;
 
 import com.google.common.collect.ImmutableSet;
+import org.gaul.modernizer_maven_annotations.SuppressModernizer;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.Servlet;
@@ -33,8 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.facebook.airlift.http.server.HttpServerConfig.AuthorizationPolicy;
-import static com.google.common.io.ByteStreams.copy;
-import static com.google.common.io.ByteStreams.nullOutputStream;
+import static java.io.OutputStream.nullOutputStream;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -71,6 +71,7 @@ public class AuthorizationEnabledServlet
         delegate.init(this.getServletConfig());
     }
 
+    @SuppressModernizer
     @Override
     public void service(ServletRequest req, ServletResponse res)
             throws ServletException, IOException
@@ -90,7 +91,7 @@ public class AuthorizationEnabledServlet
         }
 
         Optional<Set<String>> allowedRoles = this.allowedRoles;
-        if (!allowedRoles.isPresent()) {
+        if (allowedRoles.isEmpty()) {
             switch (authorizationPolicy) {
                 case ALLOW:
                     delegate.service(req, res);
@@ -136,7 +137,7 @@ public class AuthorizationEnabledServlet
         // in the client by reading and discarding the entire body of the
         // unauthenticated request before sending the response.
         try (InputStream inputStream = request.getInputStream()) {
-            copy(inputStream, nullOutputStream());
+            inputStream.transferTo(nullOutputStream());
         }
     }
 

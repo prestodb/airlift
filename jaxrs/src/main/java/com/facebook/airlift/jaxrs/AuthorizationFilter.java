@@ -99,7 +99,7 @@ public class AuthorizationFilter
         }
 
         Optional<Set<String>> allowedRoles = getAllowedRoles();
-        if (!allowedRoles.isPresent()) {
+        if (allowedRoles.isEmpty()) {
             switch (authorizationPolicy) {
                 case ALLOW:
                     return;
@@ -116,7 +116,7 @@ public class AuthorizationFilter
             }
         }
         else if (roleMaps.containsKey(resourceInfo.getResourceClass())) {
-            allowedRoles = Optional.of(allowedRoles.get()
+            allowedRoles = Optional.of(allowedRoles.orElseThrow()
                     .stream()
                     .map(role -> roleMaps.get(resourceInfo.getResourceClass()).getOrDefault(role, role))
                     .collect(toImmutableSet()));
@@ -124,7 +124,7 @@ public class AuthorizationFilter
 
         AuthorizationResult result = authorizer.authorize(
                 principal,
-                allowedRoles.get(),
+                allowedRoles.orElseThrow(),
                 request.getUriInfo().getRequestUri().toString());
         if (!result.isAllowed()) {
             request.abortWith(Response.status(Response.Status.FORBIDDEN)

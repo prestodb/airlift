@@ -14,7 +14,7 @@
     <parent>
         <groupId>com.facebook.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>100</version>
+        <version>104-SNAPSHOT</version>
     </parent>
 
     <inceptionYear>2010</inceptionYear>
@@ -23,13 +23,13 @@
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.check.skip-license>true</air.check.skip-license>
-        <air.java.version>1.8.0-40</air.java.version>
+        <air.java.version>21</air.java.version>
 
         <dep.airlift.version>0.216-SNAPSHOT</dep.airlift.version>
         <dep.packaging.version>${dep.airlift.version}</dep.packaging.version>
         <dep.jetty.version>9.4.55.v20240627</dep.jetty.version>
         <dep.jersey.version>2.26</dep.jersey.version>
-        <dep.drift.version>1.31</dep.drift.version>
+        <dep.drift.version>1.40-SNAPSHOT</dep.drift.version>
     </properties>
 
     <organization>
@@ -235,7 +235,7 @@
                         <artifactId>aopalliance-repackaged</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>io.airlift</groupId>
+                        <groupId>com.facebook.airlift</groupId>
                         <artifactId>units</artifactId>
                     </exclusion>
                 </exclusions>
@@ -298,9 +298,9 @@
             </dependency>
 
             <dependency>
-                <groupId>io.airlift</groupId>
+                <groupId>com.facebook.airlift</groupId>
                 <artifactId>units</artifactId>
-                <version>1.0</version>
+                <version>1.4-SNAPSHOT</version>
             </dependency>
 
             <dependency>

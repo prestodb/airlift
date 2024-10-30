@@ -13,7 +13,7 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-import io.airlift.slice.Slice;
+import com.facebook.slice.Slice;
 import org.openjdk.jol.info.ClassLayout;
 import org.testng.annotations.Test;
 
@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.facebook.airlift.stats.cardinality.TestUtils.sequence;
-import static io.airlift.slice.testing.SliceAssertions.assertSlicesEqual;
+import static com.facebook.slice.testing.SliceAssertions.assertSlicesEqual;
 import static java.lang.Math.toIntExact;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;

@@ -13,13 +13,13 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-import io.airlift.slice.DynamicSliceOutput;
-import io.airlift.slice.Murmur3Hash128;
-import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
+import com.facebook.slice.DynamicSliceOutput;
+import com.facebook.slice.Murmur3Hash128;
+import com.facebook.slice.Slice;
+import com.facebook.slice.Slices;
 import org.testng.annotations.Test;
 
-import static io.airlift.slice.testing.SliceAssertions.assertSlicesEqual;
+import static com.facebook.slice.testing.SliceAssertions.assertSlicesEqual;
 
 public class TestSparseSerialization
 {

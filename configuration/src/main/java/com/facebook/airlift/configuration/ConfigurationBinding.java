@@ -19,7 +19,7 @@ public final class ConfigurationBinding<T>
         requireNonNull(key, "key");
         requireNonNull(configClass, "configClass");
         requireNonNull(prefix, "prefix is null");
-        checkArgument(!prefix.isPresent() || !prefix.get().isEmpty(), "prefix is empty");
+        prefix.ifPresent(str -> checkArgument(!str.isEmpty(), "prefix is empty"));
 
         this.key = key;
         this.configClass = configClass;

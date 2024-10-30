@@ -1,7 +1,7 @@
 package com.facebook.airlift.stats;
 
+import com.facebook.slice.Slice;
 import com.google.common.collect.ImmutableList;
-import io.airlift.slice.Slice;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;

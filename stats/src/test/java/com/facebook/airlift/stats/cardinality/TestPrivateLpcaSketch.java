@@ -13,10 +13,10 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-import io.airlift.slice.Slice;
+import com.facebook.slice.Slice;
 import org.testng.annotations.Test;
 
-import static io.airlift.slice.testing.SliceAssertions.assertSlicesEqual;
+import static com.facebook.slice.testing.SliceAssertions.assertSlicesEqual;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;

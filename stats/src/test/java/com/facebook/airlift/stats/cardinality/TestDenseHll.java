@@ -13,7 +13,7 @@
  */
 package com.facebook.airlift.stats.cardinality;
 
-import io.airlift.slice.XxHash64;
+import com.facebook.slice.XxHash64;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -22,7 +22,7 @@ import java.util.List;
 import static com.facebook.airlift.stats.cardinality.TestUtils.createHashForBucket;
 import static com.facebook.airlift.stats.cardinality.TestUtils.sequence;
 import static com.facebook.airlift.stats.cardinality.Utils.numberOfBuckets;
-import static io.airlift.slice.testing.SliceAssertions.assertSlicesEqual;
+import static com.facebook.slice.testing.SliceAssertions.assertSlicesEqual;
 import static org.testng.Assert.assertEquals;
 
 public class TestDenseHll
