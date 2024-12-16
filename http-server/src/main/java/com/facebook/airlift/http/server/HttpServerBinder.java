@@ -16,7 +16,7 @@ public class HttpServerBinder
 
     private HttpServerBinder(Binder binder)
     {
-        this.binder = requireNonNull(binder, "binder is null").skipSources(getClass());
+        this.binder = requireNonNull(binder, "binder is null(for testing)").skipSources(getClass());
     }
 
     public static HttpServerBinder httpServerBinder(Binder binder)
