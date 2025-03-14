@@ -17,20 +17,24 @@ package com.facebook.airlift.http.server;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
 import com.google.common.net.HttpHeaders;
+import jakarta.annotation.Nullable;
+import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.MimeTypes;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
@@ -43,14 +47,12 @@ import static java.util.Objects.requireNonNull;
  */
 // Forked from https://github.com/NessComputing/components-ness-httpserver/
 public class ClassPathResourceHandler
-        extends AbstractHandler
+        extends Handler.Wrapper
 {
     private static final MimeTypes MIME_TYPES;
 
     static {
         MIME_TYPES = new MimeTypes();
-        // Now here is an oversight... =:-O
-        MIME_TYPES.addMimeMapping("json", "application/json");
     }
 
     private final String baseUri; // "" or "/foo"
@@ -88,32 +90,27 @@ public class ClassPathResourceHandler
     }
 
     @Override
-    public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
-            throws IOException
+    public boolean handle(Request request, Response response, Callback callback)
+            throws Exception
     {
-        if (baseRequest.isHandled()) {
-            return;
-        }
-
         String resourcePath = getResourcePath(request);
         if (resourcePath == null) {
-            return;
+            return false;
         }
 
         if (resourcePath.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_TEMPORARY_REDIRECT);
-            response.setHeader(HttpHeaders.LOCATION, response.encodeRedirectURL(baseUri + "/"));
-            baseRequest.setHandled(true);
-            return;
+            response.getHeaders().add(HttpHeaders.LOCATION, Response.toRedirectURI(request, baseUri + "/"));
+            callback.succeeded();
+            return true;
         }
 
         URL resource = getResource(resourcePath);
         if (resource == null) {
-            return;
+            return false;
         }
 
         // When a request hits this handler, it will serve something. Either data or an error.
-        baseRequest.setHandled(true);
 
         String method = request.getMethod();
         boolean skipContent = false;
@@ -122,8 +119,8 @@ public class ClassPathResourceHandler
                 skipContent = true;
             }
             else {
-                response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-                return;
+                callback.failed(new HttpException.IllegalArgumentException(HttpServletResponse.SC_METHOD_NOT_ALLOWED));
+                return true;
             }
         }
 
@@ -132,24 +129,52 @@ public class ClassPathResourceHandler
             resourceStream = resource.openStream();
 
             String contentType = MIME_TYPES.getMimeByExtension(resource.toString());
-            response.setContentType(contentType);
-            extraHeaders.forEach((name, value) -> response.setHeader(name, value));
-
+            response.getHeaders().add(HttpHeader.CONTENT_TYPE, contentType);
+            extraHeaders.forEach((name, value) -> response.getHeaders().add(name, value));
             if (skipContent) {
-                return;
+                callback.succeeded();
+                return true;
             }
 
-            ByteStreams.copy(resourceStream, response.getOutputStream());
+            resourceStream.transferTo(new BufferedOutputStream(new OutputStream()
+            {
+                @Override
+                public void write(int buf)
+                        throws IOException
+                {
+                    response.write(false, ByteBuffer.wrap(new byte[] {(byte) buf}), Callback.NOOP);
+                }
+
+                @Override
+                public void write(byte[] buf)
+                        throws IOException
+                {
+                    response.write(false, ByteBuffer.wrap(buf), Callback.NOOP);
+                }
+
+                @Override
+                public void write(byte[] buf, int off, int len)
+                        throws IOException
+                {
+                    response.write(false, ByteBuffer.wrap(buf, off, len), Callback.NOOP);
+                }
+            }));
+            response.write(true, ByteBuffer.allocate(0), null);
+            callback.succeeded();
+        }
+        catch (Exception e) {
+            callback.failed(e);
         }
         finally {
             closeQuietly(resourceStream);
         }
+        return true;
     }
 
     @Nullable
-    private String getResourcePath(HttpServletRequest request)
+    private String getResourcePath(Request request)
     {
-        String pathInfo = request.getPathInfo();
+        String pathInfo = request.getHttpURI().getPath();
 
         // Only serve the content if the request matches the base path.
         if (pathInfo == null || !pathInfo.startsWith(baseUri)) {

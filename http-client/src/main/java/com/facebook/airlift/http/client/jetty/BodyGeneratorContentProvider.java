@@ -2,7 +2,8 @@ package com.facebook.airlift.http.client.jetty;
 
 import com.facebook.airlift.http.client.BodyGenerator;
 import com.google.common.collect.AbstractIterator;
-import org.eclipse.jetty.client.api.ContentProvider;
+import org.eclipse.jetty.client.Request;
+import org.eclipse.jetty.io.Content;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -16,29 +17,42 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Throwables.throwIfUnchecked;
+import static org.eclipse.jetty.io.Content.Chunk.EOF;
 
 class BodyGeneratorContentProvider
-        implements ContentProvider
+        implements Request.Content
 {
     private static final ByteBuffer DONE = ByteBuffer.allocate(0);
     private static final ByteBuffer EXCEPTION = ByteBuffer.allocate(0);
 
     private final BodyGenerator bodyGenerator;
     private final Executor executor;
+    private final Iterator<ByteBuffer> iterator;
 
     public BodyGeneratorContentProvider(BodyGenerator bodyGenerator, Executor executor)
     {
         this.bodyGenerator = bodyGenerator;
         this.executor = executor;
+        iterator = iterator();
     }
 
     @Override
-    public long getLength()
+    public Content.Chunk read()
     {
-        return -1;
+        return iterator.hasNext() ? Content.Chunk.from(iterator.next(), iterator.hasNext()) : EOF;
     }
 
     @Override
+    public void demand(Runnable runnable)
+    {
+        runnable.run();
+    }
+
+    @Override
+    public void fail(Throwable throwable)
+    {
+    }
+
     public Iterator<ByteBuffer> iterator()
     {
         final BlockingQueue<ByteBuffer> chunks = new ArrayBlockingQueue<>(16);

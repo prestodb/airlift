@@ -15,9 +15,8 @@
  */
 package com.facebook.airlift.testing;
 
+import jakarta.validation.constraints.NotNull;
 import org.testng.annotations.Test;
-
-import javax.validation.constraints.NotNull;
 
 import java.lang.annotation.Annotation;
 

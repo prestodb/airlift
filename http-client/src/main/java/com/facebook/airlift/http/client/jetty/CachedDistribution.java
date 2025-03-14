@@ -1,10 +1,8 @@
 package com.facebook.airlift.http.client.jetty;
 
 import com.facebook.airlift.stats.Distribution;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import org.weakref.jmx.Managed;
-
-import javax.annotation.concurrent.GuardedBy;
-import javax.annotation.concurrent.ThreadSafe;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -15,7 +13,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * This class is needed because jmxutils only fetches a nested instance object once and holds on to it forever.
  * todo remove this when https://github.com/martint/jmxutils/issues/26 is implemented
  */
-@ThreadSafe
 public class CachedDistribution
 {
     private final Supplier<Distribution> distributionSupplier;

@@ -16,14 +16,13 @@ package com.facebook.airlift.stats;
 import com.facebook.airlift.log.Logger;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.units.Duration;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.HistogramIterationValue;
 import org.weakref.jmx.Managed;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.concurrent.GuardedBy;
 
 import java.util.Map;
 import java.util.TreeMap;

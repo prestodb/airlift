@@ -17,9 +17,9 @@ import com.facebook.airlift.log.Logger;
 import com.facebook.airlift.security.pem.PemReader;
 import com.google.common.hash.HashCode;
 import com.google.common.io.Files;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.units.Duration;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;

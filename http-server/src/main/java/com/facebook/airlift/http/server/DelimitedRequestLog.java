@@ -26,11 +26,12 @@ import com.facebook.airlift.event.client.EventClient;
 import com.facebook.airlift.log.Logger;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
 import io.airlift.units.DataSize;
+import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Response;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.facebook.airlift.http.server.HttpRequestEvent.createHttpRequestEvent;
@@ -121,7 +122,8 @@ class DelimitedRequestLog
 
     public void log(
             Request request,
-            Response response,
+            int responseCode,
+            HttpFields responseFields,
             long beginToDispatchMillis,
             long beginToEndMillis,
             long firstToLastContentTimeInMillis,
@@ -129,7 +131,8 @@ class DelimitedRequestLog
     {
         HttpRequestEvent event = createHttpRequestEvent(
                 request,
-                response,
+                responseCode,
+                responseFields,
                 traceTokenManager,
                 currentTimeMillisProvider.getCurrentTimeMillis(),
                 beginToDispatchMillis,
@@ -158,13 +161,13 @@ class DelimitedRequestLog
         // these .tmp files are log files that are about to be compressed.
         // This method recovers them so that they aren't orphaned
 
-        File logPathFile = new File(logPath).getParentFile();
+        File logPathFile = Path.of(logPath).toFile().getParentFile();
         File[] tempFiles = logPathFile.listFiles((dir, name) -> name.endsWith(TEMP_FILE_EXTENSION));
 
         if (tempFiles != null) {
             for (File tempFile : tempFiles) {
                 String newName = tempFile.getName().substring(0, tempFile.getName().length() - TEMP_FILE_EXTENSION.length());
-                File newFile = new File(tempFile.getParent(), newName + LOG_FILE_EXTENSION);
+                File newFile = Path.of(tempFile.getParent(), newName + LOG_FILE_EXTENSION).toFile();
                 if (tempFile.renameTo(newFile)) {
                     log.info("Recovered temp file: %s", tempFile);
                 }

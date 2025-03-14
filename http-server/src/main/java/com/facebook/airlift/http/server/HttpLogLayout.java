@@ -41,8 +41,6 @@ public class HttpLogLayout
                 .append('\t')
                 .append(event.getRequestSize())
                 .append('\t')
-                .append(event.getResponseSize())
-                .append('\t')
                 .append(event.getTimeToLastByte())
                 .append('\t')
                 .append(event.getTraceToken())

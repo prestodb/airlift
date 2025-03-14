@@ -3,9 +3,8 @@ package com.facebook.airlift.dbpool;
 import com.facebook.airlift.configuration.testing.ConfigAssertions;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
+import jakarta.validation.constraints.NotNull;
 import org.testng.annotations.Test;
-
-import javax.validation.constraints.NotNull;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

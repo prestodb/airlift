@@ -13,10 +13,10 @@
  */
 package com.facebook.airlift.http.server;
 
-import org.eclipse.jetty.server.HttpChannel.Listener;
+import jakarta.annotation.Nullable;
+import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.server.Request;
-
-import javax.annotation.Nullable;
+import org.eclipse.jetty.server.handler.EventsHandler;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class HttpServerChannelListener
-        implements Listener
+        extends EventsHandler
 {
     private static final String REQUEST_BEGIN_ATTRIBUTE = HttpServerChannelListener.class.getName() + ".begin";
     private static final String REQUEST_BEGIN_TO_DISPATCH_ATTRIBUTE = HttpServerChannelListener.class.getName() + ".begin_to_dispatch";
@@ -42,47 +42,47 @@ public class HttpServerChannelListener
     }
 
     @Override
-    public void onRequestBegin(Request request)
+    protected void onBeforeHandling(Request request)
     {
         request.setAttribute(REQUEST_BEGIN_ATTRIBUTE, System.nanoTime());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void onBeforeDispatch(Request request)
-    {
-        long requestBeginTime = (Long) request.getAttribute(REQUEST_BEGIN_ATTRIBUTE);
-        request.setAttribute(REQUEST_BEGIN_TO_DISPATCH_ATTRIBUTE, System.nanoTime() - requestBeginTime);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void onRequestEnd(Request request)
+    protected void onAfterHandling(Request request, boolean handled, Throwable failure)
     {
         long requestBeginTime = (Long) request.getAttribute(REQUEST_BEGIN_ATTRIBUTE);
         request.setAttribute(REQUEST_BEGIN_TO_END_ATTRIBUTE, System.nanoTime() - requestBeginTime);
     }
 
     @Override
-    public void onResponseBegin(Request request)
+    protected void onResponseBegin(Request request, int status, HttpFields headers)
     {
         if (request.getAttribute(REQUEST_BEGIN_TO_END_ATTRIBUTE) == null) {
-            onRequestEnd(request);
+            this.onComplete(request, status, headers, null);
         }
-        request.setAttribute(RESPONSE_CONTENT_TIMESTAMPS_ATTRIBUTE, new ArrayList<Long>());
+        request.setAttribute(RESPONSE_CONTENT_TIMESTAMPS_ATTRIBUTE, new ArrayList<>());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void onResponseContent(Request request, ByteBuffer content)
+    protected void onResponseWrite(Request request, boolean last, ByteBuffer content)
     {
         List<Long> contentTimestamps = (List<Long>) request.getAttribute(RESPONSE_CONTENT_TIMESTAMPS_ATTRIBUTE);
         contentTimestamps.add(System.nanoTime());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void onComplete(Request request)
+    protected void onComplete(Request request, Throwable failure)
+    {
+        onCompleteHelper(request, -1, HttpFields.EMPTY, failure);
+    }
+
+    @Override
+    protected void onComplete(Request request, int status, HttpFields headers, Throwable failure)
+    {
+        onCompleteHelper(request, status, headers, failure);
+    }
+
+    private void onCompleteHelper(Request request, int status, HttpFields headers, Throwable failure)
     {
         List<Long> contentTimestamps = (List<Long>) request.getAttribute(RESPONSE_CONTENT_TIMESTAMPS_ATTRIBUTE);
         long firstToLastContentTimeInMillis = -1;
@@ -92,7 +92,8 @@ public class HttpServerChannelListener
         long beginToDispatchMillis = NANOSECONDS.toMillis((Long) request.getAttribute(REQUEST_BEGIN_TO_DISPATCH_ATTRIBUTE));
         long beginToEndMillis = NANOSECONDS.toMillis((Long) request.getAttribute(REQUEST_BEGIN_TO_END_ATTRIBUTE));
         logger.log(request,
-                request.getResponse(),
+                status,
+                headers,
                 beginToDispatchMillis,
                 beginToEndMillis,
                 firstToLastContentTimeInMillis,

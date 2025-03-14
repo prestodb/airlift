@@ -20,10 +20,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import io.airlift.units.DataSize;
 import io.airlift.units.Duration;
+import jakarta.validation.constraints.NotNull;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.testng.annotations.Test;
-
-import javax.validation.constraints.NotNull;
 
 import java.util.Arrays;
 import java.util.List;

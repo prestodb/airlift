@@ -18,19 +18,18 @@ import com.facebook.airlift.node.NodeInfo;
 import com.facebook.airlift.tracetoken.TraceTokenManager;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Files;
+import jakarta.servlet.http.HttpServlet;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import javax.servlet.http.HttpServlet;
-
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.common.io.MoreFiles.deleteRecursively;
@@ -47,12 +46,12 @@ public class TestHttpServerCipher
     public static final String CIPHER_2 = "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256";
     public static final String CIPHER_3 = "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
 
-    private File tempDir;
+    private Path tempDir;
 
     private static String constructKeyStorePath()
     {
         try {
-            return new File(getResource("test.keystore").toURI()).getAbsolutePath();
+            return Path.of(getResource("test.keystore").toURI()).toAbsolutePath().toString();
         }
         catch (URISyntaxException e) {
             throw new RuntimeException(e);
@@ -63,14 +62,14 @@ public class TestHttpServerCipher
     public void setup()
             throws IOException
     {
-        tempDir = Files.createTempDir();
+        tempDir = Files.createTempDirectory("test-server-cipher");
     }
 
     @AfterMethod(alwaysRun = true)
     public void teardown()
             throws Exception
     {
-        deleteRecursively(tempDir.toPath(), ALLOW_INSECURE);
+        deleteRecursively(tempDir, ALLOW_INSECURE);
     }
 
     @Test
@@ -177,20 +176,21 @@ public class TestHttpServerCipher
                 .setHttpsPort(0)
                 .setKeystorePath(KEY_STORE_PATH)
                 .setKeystorePassword(KEY_STORE_PASSWORD)
-                .setLogPath(new File(tempDir, "http-request.log").getAbsolutePath());
+                .setLogPath(tempDir.resolve("http-request.log").toAbsolutePath().toString());
     }
 
     private static HttpClient createClientIncludeCiphers(String... includedCipherSuites)
             throws Exception
     {
-        SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+        SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
         sslContextFactory.setIncludeCipherSuites(includedCipherSuites);
         // Since Jetty 9.4.12 the list of excluded cipher suites includes "^TLS_RSA_.*$" by default.
         // We reset that list here to enable use of those cipher suites.
         sslContextFactory.setExcludeCipherSuites();
         sslContextFactory.setKeyStorePath(KEY_STORE_PATH);
         sslContextFactory.setKeyStorePassword(KEY_STORE_PASSWORD);
-        HttpClient httpClient = new HttpClient(sslContextFactory);
+        HttpClient httpClient = new HttpClient();
+        httpClient.setSslContextFactory(sslContextFactory);
         httpClient.start();
         return httpClient;
     }

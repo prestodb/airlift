@@ -17,9 +17,6 @@ import com.facebook.airlift.log.Logger;
 import com.google.common.util.concurrent.RateLimiter;
 import org.eclipse.jetty.client.HttpClient;
 
-import javax.annotation.concurrent.ThreadSafe;
-
-@ThreadSafe
 class JettyClientDiagnostics
 {
     private static final Logger log = Logger.get(JettyClientDiagnostics.class);

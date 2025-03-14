@@ -3,8 +3,6 @@ package com.facebook.airlift.concurrent;
 import com.facebook.airlift.log.Logger;
 import com.google.common.base.Preconditions;
 
-import javax.annotation.concurrent.ThreadSafe;
-
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
@@ -28,7 +26,6 @@ import static java.util.Objects.requireNonNull;
  * <li>Will not encounter starvation</li>
  * </ul>
  */
-@ThreadSafe
 public class BoundedExecutor
         implements Executor
 {
