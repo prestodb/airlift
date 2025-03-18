@@ -39,7 +39,7 @@ class BodyGeneratorContentProvider
     @Override
     public Content.Chunk read()
     {
-        return iterator.hasNext() ? Content.Chunk.from(iterator.next(), iterator.hasNext()) : EOF;
+        return iterator.hasNext() ? Content.Chunk.from(iterator.next(), !iterator.hasNext()) : EOF;
     }
 
     @Override
@@ -113,6 +113,19 @@ class BodyGeneratorContentProvider
             try {
                 // must copy array since it could be reused
                 chunks.put(ByteBuffer.wrap(new byte[] {(byte) b}));
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new InterruptedIOException();
+            }
+        }
+
+        @Override
+        public void write(byte[] b)
+                throws IOException
+        {
+            try {
+                chunks.put(ByteBuffer.wrap(Arrays.copyOf(b, b.length)));
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
