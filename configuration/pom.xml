@@ -24,7 +24,11 @@
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>7.0.5.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.el</artifactId>
         </dependency>
 
         <dependency>
@@ -80,6 +84,13 @@
                     <exclusions>
                         <exclusion>com/google/inject/Provider</exclusion>
                     </exclusions>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <ignoredUnusedDeclaredDependencies>org.glassfish:jakarta.el</ignoredUnusedDeclaredDependencies>
                 </configuration>
             </plugin>
         </plugins>
