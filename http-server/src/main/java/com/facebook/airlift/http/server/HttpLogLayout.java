@@ -49,7 +49,7 @@ public class HttpLogLayout
                 .append('\t')
                 .append(event.getBeginToDispatchMillis())
                 .append('\t')
-                .append(event.getBeginToEndMillis())
+                .append(event.getAfterDispatchMillis())
                 .append('\t')
                 .append(event.getFirstToLastContentTimeInMillis())
                 .append('\t')

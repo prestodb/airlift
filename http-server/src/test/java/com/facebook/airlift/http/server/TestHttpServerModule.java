@@ -327,7 +327,7 @@ public class TestHttpServerModule
         assertEquals(event.getClientAddress(), echoServlet.remoteAddress);
         assertEquals(event.getProtocol(), "http");
         assertEquals(event.getMethod(), "POST");
-        assertEquals(event.getRequestUri(), requestUri.getPath());
+        assertEquals(event.getRequestUri(), requestUri.toString());
         assertNull(event.getUser());
         assertEquals(event.getAgent(), userAgent);
         assertEquals(event.getReferrer(), referrer);

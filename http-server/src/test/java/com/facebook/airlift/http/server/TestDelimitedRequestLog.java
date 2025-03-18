@@ -76,7 +76,7 @@ public class TestDelimitedRequestLog
     public void testTraceTokenHeader()
             throws Exception
     {
-        Request request = mock(Request.class);
+        Request request = setupMockRequest();
         ConnectionMetaData connectionMetaData = mock(ConnectionMetaData.class);
         TraceTokenManager tokenManager = new TraceTokenManager();
         InMemoryEventClient eventClient = new InMemoryEventClient();
@@ -119,7 +119,7 @@ public class TestDelimitedRequestLog
     public void testWriteLog()
             throws Exception
     {
-        Request request = mock(Request.class);
+        Request request = setupMockRequest();
         Response response = mock(Response.class);
         ConnectionMetaData connectionMetaData = mock(ConnectionMetaData.class);
         Request.AuthenticationState authenticationState = mock(Request.AuthenticationState.class);
@@ -143,7 +143,7 @@ public class TestDelimitedRequestLog
         HttpURI uri = HttpURI.build("http://www.example.com/aaa+bbb/ccc?param=hello%20there&other=true");
         long beginToDispatchMillis = 333;
         long firstToLastContentTimeInMillis = 444;
-        long beginToEndMillis = 555;
+        long afterHandleMillis = 555;
         DoubleSummaryStatistics stats = new DoubleSummaryStatistics();
         stats.accept(1);
         stats.accept(3);
@@ -162,6 +162,8 @@ public class TestDelimitedRequestLog
         when(principal.getName()).thenReturn(user);
         when(authenticationState.getUserPrincipal()).thenReturn(principal);
         when(connectionMetaData.getProtocol()).thenReturn("unknown");
+        when(connectionMetaData.getHttpVersion()).thenReturn(HTTP_2);
+        when(request.getHeaders()).thenReturn(headers);
         when(request.getConnectionMetaData()).thenReturn(connectionMetaData);
         when(request.getHttpURI()).thenReturn(uri);
         when(request.getAttribute(TimingFilter.FIRST_BYTE_TIME)).thenReturn(timestamp + timeToFirstByte);
@@ -172,13 +174,13 @@ public class TestDelimitedRequestLog
             requestMock.when(() -> Request.getRemoteAddr(request)).thenReturn("9.9.9.9");
             requestMock.when(() -> Request.getAuthenticationState(request)).thenReturn(authenticationState);
             requestMock.when(() -> Request.getContentBytesRead(request)).thenReturn(requestSize);
-        }
-        HttpFields.Mutable responseHeaders = HttpFields.build()
-                .put("Content-Type", responseContentType);
+            HttpFields.Mutable responseHeaders = HttpFields.build()
+                    .put("Content-Type", responseContentType);
 
-        tokenManager.createAndRegisterNewRequestToken();
-        logger.log(request, responseCode, responseHeaders, beginToDispatchMillis, beginToEndMillis, firstToLastContentTimeInMillis, responseContentInterarrivalStats);
-        logger.stop();
+            tokenManager.createAndRegisterNewRequestToken();
+            logger.log(request, responseCode, responseHeaders, beginToDispatchMillis, afterHandleMillis, firstToLastContentTimeInMillis, responseContentInterarrivalStats);
+            logger.stop();
+        }
 
         List<Object> events = eventClient.getEvents();
         assertEquals(events.size(), 1);
@@ -204,7 +206,7 @@ public class TestDelimitedRequestLog
         assertEquals(event.getResponseContentInterarrivalStats(), responseContentInterarrivalStats);
 
         String actual = asCharSource(file, UTF_8).read();
-        String expected = String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+        String expected = String.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
                 ISO_FORMATTER.format(Instant.ofEpochMilli(timestamp)),
                 ip,
                 method,
@@ -213,12 +215,11 @@ public class TestDelimitedRequestLog
                 agent,
                 responseCode,
                 requestSize,
-                responseSize,
                 event.getTimeToLastByte(),
                 tokenManager.getCurrentRequestToken(),
-                HTTP_2.toString(),
+                HTTP_2,
                 beginToDispatchMillis,
-                beginToEndMillis,
+                afterHandleMillis,
                 firstToLastContentTimeInMillis,
                 format("%.2f, %.2f, %.2f, %d", stats.getMin(), stats.getAverage(), stats.getMax(), stats.getCount()));
         assertEquals(actual, expected);
@@ -228,12 +229,12 @@ public class TestDelimitedRequestLog
     public void testNoXForwardedProto()
             throws Exception
     {
-        Request request = mock(Request.class);
+        Request request = setupMockRequest();
         ConnectionMetaData connectionMetaData = mock(ConnectionMetaData.class);
         String protocol = "protocol";
 
         when(request.getConnectionMetaData()).thenReturn(connectionMetaData);
-        when(connectionMetaData.getProtocol()).thenReturn(protocol);
+        when(request.getHttpURI()).thenReturn(HttpURI.build("protocol://localhost:8080"));
         when(connectionMetaData.getHttpVersion()).thenReturn(HTTP_2);
 
         InMemoryEventClient eventClient = new InMemoryEventClient();
@@ -252,11 +253,7 @@ public class TestDelimitedRequestLog
     public void testNoTimeToFirstByte()
             throws Exception
     {
-        Request request = mock(Request.class);
-        ConnectionMetaData connectionMetaData = mock(ConnectionMetaData.class);
-
-        when(request.getConnectionMetaData()).thenReturn(connectionMetaData);
-        when(connectionMetaData.getHttpVersion()).thenReturn(HTTP_2);
+        Request request = setupMockRequest();
 
         InMemoryEventClient eventClient = new InMemoryEventClient();
         DelimitedRequestLog logger = new DelimitedRequestLog(file.getAbsolutePath(), 1, 256, Long.MAX_VALUE, null, eventClient, false);
@@ -270,11 +267,22 @@ public class TestDelimitedRequestLog
         assertNull(event.getTimeToFirstByte());
     }
 
+    private Request setupMockRequest()
+    {
+        Request request = mock(Request.class);
+        ConnectionMetaData connectionMetaData = mock(ConnectionMetaData.class);
+        when(request.getConnectionMetaData()).thenReturn(connectionMetaData);
+        when(connectionMetaData.getHttpVersion()).thenReturn(HTTP_2);
+        when(request.getHeaders()).thenReturn(HttpFields.EMPTY);
+        when(request.getHttpURI()).thenReturn(HttpURI.build("http://localhost"));
+        return request;
+    }
+
     @Test
     public void testNoXForwardedFor()
             throws Exception
     {
-        Request request = mock(Request.class);
+        Request request = setupMockRequest();
         ConnectionMetaData connectionMetaData = mock(ConnectionMetaData.class);
         String clientIp = "1.1.1.1";
 
@@ -304,6 +312,7 @@ public class TestDelimitedRequestLog
         ConnectionMetaData connectionMetaData = mock(ConnectionMetaData.class);
         when(request.getConnectionMetaData()).thenReturn(connectionMetaData);
         when(connectionMetaData.getHttpVersion()).thenReturn(HTTP_2);
+        when(request.getHttpURI()).thenReturn(HttpURI.build("http://localhost:8080/test"));
         String clientIp = "1.1.1.1";
         HttpFields.Mutable fields = HttpFields.build();
         ImmutableList.of(clientIp, "192.168.1.2, 172.16.0.1", "169.254.1.2, 127.1.2.3", "10.1.2.3")

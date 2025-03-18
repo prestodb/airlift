@@ -50,6 +50,7 @@ public class ClassPathResourceHandler
         extends Handler.Wrapper
 {
     private static final MimeTypes MIME_TYPES;
+    private static final byte[] EMPTY_BYTE = new byte[0];
 
     static {
         MIME_TYPES = new MimeTypes();
@@ -91,7 +92,6 @@ public class ClassPathResourceHandler
 
     @Override
     public boolean handle(Request request, Response response, Callback callback)
-            throws Exception
     {
         String resourcePath = getResourcePath(request);
         if (resourcePath == null) {
@@ -136,7 +136,7 @@ public class ClassPathResourceHandler
                 return true;
             }
 
-            resourceStream.transferTo(new BufferedOutputStream(new OutputStream()
+            try (OutputStream out = new BufferedOutputStream(new OutputStream()
             {
                 @Override
                 public void write(int buf)
@@ -158,8 +158,10 @@ public class ClassPathResourceHandler
                 {
                     response.write(false, ByteBuffer.wrap(buf, off, len), Callback.NOOP);
                 }
-            }));
-            response.write(true, ByteBuffer.allocate(0), null);
+            })) {
+                resourceStream.transferTo(out);
+            }
+            response.write(true, ByteBuffer.wrap(EMPTY_BYTE), null);
             callback.succeeded();
         }
         catch (Exception e) {

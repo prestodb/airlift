@@ -125,7 +125,7 @@ class DelimitedRequestLog
             int responseCode,
             HttpFields responseFields,
             long beginToDispatchMillis,
-            long beginToEndMillis,
+            long afterHandleMillis,
             long firstToLastContentTimeInMillis,
             DoubleSummaryStats responseContentInterarrivalStats)
     {
@@ -136,7 +136,7 @@ class DelimitedRequestLog
                 traceTokenManager,
                 currentTimeMillisProvider.getCurrentTimeMillis(),
                 beginToDispatchMillis,
-                beginToEndMillis,
+                afterHandleMillis,
                 firstToLastContentTimeInMillis,
                 responseContentInterarrivalStats);
 

@@ -27,6 +27,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.Filter;
 import jakarta.servlet.Servlet;
+import org.eclipse.jetty.ee10.servlet.ErrorHandler;
 import org.eclipse.jetty.ee10.servlet.FilterHolder;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
@@ -40,6 +41,7 @@ import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -89,6 +91,7 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.function.Predicate.not;
 
 public class HttpServer
 {
@@ -132,6 +135,7 @@ public class HttpServer
         threadPool.setName("http-worker");
         threadPool.setDetailedDump(true);
         server = new Server(threadPool);
+        server.setErrorHandler(new ErrorHandler());
         registerErrorHandler = config.isShowStackTrace();
 
         if (mbeanServer != null) {
@@ -157,7 +161,6 @@ public class HttpServer
         HttpServerChannelListener channelListener = null;
         if (config.isLogEnabled()) {
             this.requestLog = createDelimitedRequestLog(config, tokenManager, eventClient);
-            channelListener = new HttpServerChannelListener(this.requestLog);
         }
         else {
             this.requestLog = null;
@@ -213,8 +216,10 @@ public class HttpServer
             server.addConnector(httpConnector);
         }
 
-        List<String> includedCipherSuites = config.getHttpsIncludedCipherSuites();
-        List<String> excludedCipherSuites = config.getHttpsExcludedCipherSuites();
+        Optional<List<String>> includedCipherSuites = Optional.of(config.getHttpsIncludedCipherSuites())
+                .filter(not(List::isEmpty));
+        Optional<List<String>> excludedCipherSuites = Optional.of(config.getHttpsExcludedCipherSuites())
+                .filter(not(List::isEmpty));
 
         // set up NIO-based HTTPS connector
         ServerConnector httpsConnector;
@@ -247,8 +252,8 @@ public class HttpServer
                 }
             }
 
-            sslContextFactory.setIncludeCipherSuites(includedCipherSuites.toArray(new String[0]));
-            sslContextFactory.setExcludeCipherSuites(excludedCipherSuites.toArray(new String[0]));
+            includedCipherSuites.map(suites -> suites.toArray(new String[0])).ifPresent(sslContextFactory::setIncludeCipherSuites);
+            excludedCipherSuites.map(suites -> suites.toArray(new String[0])).ifPresent(sslContextFactory::setExcludeCipherSuites);
             sslContextFactory.setSecureRandomAlgorithm(config.getSecureRandomAlgorithm());
             sslContextFactory.setWantClientAuth(true);
             sslContextFactory.setSslSessionTimeout((int) config.getSslSessionTimeout().getValue(SECONDS));
@@ -306,8 +311,8 @@ public class HttpServer
                 }
                 sslContextFactory.setSecureRandomAlgorithm(config.getSecureRandomAlgorithm());
                 sslContextFactory.setWantClientAuth(true);
-                sslContextFactory.setIncludeCipherSuites(includedCipherSuites.toArray(new String[0]));
-                sslContextFactory.setExcludeCipherSuites(excludedCipherSuites.toArray(new String[0]));
+                includedCipherSuites.map(suites -> suites.toArray(new String[0])).ifPresent(sslContextFactory::setIncludeCipherSuites);
+                excludedCipherSuites.map(suites -> suites.toArray(new String[0])).ifPresent(sslContextFactory::setExcludeCipherSuites);
                 SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
                 adminConnector = createServerConnector(
                         httpServerInfo.getAdminChannel(),
@@ -360,11 +365,9 @@ public class HttpServer
          *    |-- admin context handler
          *           \ --- the admin servlet
          */
-        ContextHandlerCollection handlers = new ContextHandlerCollection();
-
+        Handler.Sequence handlers = new Handler.Sequence();
         for (HttpResourceBinding resource : resources) {
-            GzipHandler gzipHandler = new GzipHandler();
-            gzipHandler.insertHandler(new ClassPathResourceHandler(
+            GzipHandler gzipHandler = new GzipHandler(new ClassPathResourceHandler(
                     resource.getBaseUri(),
                     resource.getClassPathResourceBase(),
                     resource.getWelcomeFiles(),
@@ -379,14 +382,19 @@ public class HttpServer
         }
 
         // add handlers to Jetty
-        StatisticsHandler statsHandler = new StatisticsHandler();
-        statsHandler.setHandler(handlers);
+        StatisticsHandler statsHandler = new StatisticsHandler(handlers);
 
         ContextHandlerCollection rootHandlers = new ContextHandlerCollection();
         if (theAdminServlet != null && config.isAdminEnabled()) {
             rootHandlers.addHandler(createServletContext(config, theAdminServlet, ImmutableMap.of(), adminParameters, adminFilters, tokenManager, loginService, authorizer, "admin"));
         }
-        rootHandlers.addHandler(statsHandler);
+
+        if (requestLog != null) {
+            rootHandlers.addHandler(new HttpServerChannelListener(requestLog, statsHandler));
+        }
+        else {
+            rootHandlers.addHandler(statsHandler);
+        }
         server.setHandler(rootHandlers);
 
         certificateExpiration = loadAllX509Certificates(config).stream()
@@ -462,7 +470,7 @@ public class HttpServer
 
     private static SecurityHandler createSecurityHandler(LoginService loginService)
     {
-        Constraint constraint = Constraint.ALLOWED;
+        Constraint constraint = Constraint.ANY_USER;
 
         ConstraintMapping constraintMapping = new ConstraintMapping();
         constraintMapping.setConstraint(constraint);
@@ -583,6 +591,7 @@ public class HttpServer
             server.setErrorHandler(null);
         }
         checkState(server.isStarted(), "server is not started");
+//        System.out.println(server.dump());
     }
 
     @PreDestroy

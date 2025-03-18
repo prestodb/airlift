@@ -42,9 +42,9 @@ public class TestHttpServerCipher
 {
     private static final String KEY_STORE_PATH = constructKeyStorePath();
     private static final String KEY_STORE_PASSWORD = "airlift";
-    public static final String CIPHER_1 = "TLS_RSA_WITH_AES_128_CBC_SHA256";
-    public static final String CIPHER_2 = "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256";
-    public static final String CIPHER_3 = "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256";
+    public static final String CIPHER_1 = "TLS_AES_256_GCM_SHA384";
+    public static final String CIPHER_2 = "TLS_AES_128_GCM_SHA256";
+    public static final String CIPHER_3 = "TLS_CHACHA20_POLY1305_SHA256";
 
     private Path tempDir;
 
@@ -86,14 +86,18 @@ public class TestHttpServerCipher
             server.start();
             URI httpsUri = httpServerInfo.getHttpsUri();
 
-            HttpClient httpClient = createClientIncludeCiphers(CIPHER_1);
-            httpClient.GET(httpsUri);
+            System.setProperty("javax.net.debug", "ssl:handshake");
+            try (HttpClient httpClient = createClientIncludeCiphers(CIPHER_1)) {
+                httpClient.GET(httpsUri);
+            }
 
-            httpClient = createClientIncludeCiphers(CIPHER_2);
-            httpClient.GET(httpsUri);
+            try (HttpClient httpClient = createClientIncludeCiphers(CIPHER_2)) {
+                httpClient.GET(httpsUri);
+            }
 
-            httpClient = createClientIncludeCiphers(CIPHER_3);
-            httpClient.GET(httpsUri);
+            try (HttpClient httpClient = createClientIncludeCiphers(CIPHER_3)) {
+                httpClient.GET(httpsUri);
+            }
         }
         finally {
             server.stop();
@@ -184,10 +188,11 @@ public class TestHttpServerCipher
     {
         SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
         sslContextFactory.setIncludeCipherSuites(includedCipherSuites);
+        sslContextFactory.setEndpointIdentificationAlgorithm(null);
+        sslContextFactory.setKeyStorePath(KEY_STORE_PATH);
         // Since Jetty 9.4.12 the list of excluded cipher suites includes "^TLS_RSA_.*$" by default.
         // We reset that list here to enable use of those cipher suites.
-        sslContextFactory.setExcludeCipherSuites();
-        sslContextFactory.setKeyStorePath(KEY_STORE_PATH);
+        sslContextFactory.setExcludeCipherSuites(new String[0]);
         sslContextFactory.setKeyStorePassword(KEY_STORE_PASSWORD);
         HttpClient httpClient = new HttpClient();
         httpClient.setSslContextFactory(sslContextFactory);

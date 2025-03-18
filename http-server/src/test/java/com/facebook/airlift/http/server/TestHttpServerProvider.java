@@ -380,7 +380,7 @@ public class TestHttpServerProvider
             protected void doGet(HttpServletRequest request, HttpServletResponse response)
                     throws IOException
             {
-                X509Certificate[] certs = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+                X509Certificate[] certs = (X509Certificate[]) request.getAttribute("jakarta.servlet.request.X509Certificate");
                 if ((certs == null) || (certs.length == 0)) {
                     throw new RuntimeException("No client certificate");
                 }
@@ -476,7 +476,7 @@ public class TestHttpServerProvider
         createAndStartServer();
     }
 
-    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ".+Cannot recover key.+")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = ".+Cannot recover key.*")
     public void testInsufficientPasswordToAccessKeystore()
             throws Exception
     {
