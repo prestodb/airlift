@@ -1,6 +1,5 @@
 package com.facebook.airlift.concurrent;
 
-import com.google.common.collect.Streams;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.FutureCallback;
@@ -33,6 +32,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.propagateIfPossible;
 import static com.google.common.base.Throwables.throwIfInstanceOf;
+import static com.google.common.collect.Streams.stream;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
@@ -276,7 +276,7 @@ public final class MoreFutures
     public static <V> ListenableFuture<V> whenAnyComplete(Iterable<? extends ListenableFuture<? extends V>> futures)
     {
         requireNonNull(futures, "futures is null");
-        checkArgument(!Streams.stream(futures).findAny().isPresent(), "futures is empty");
+        checkArgument(stream(futures).findAny().isPresent(), "futures is empty");
 
         ExtendedSettableFuture<V> firstCompletedFuture = ExtendedSettableFuture.create();
         for (ListenableFuture<? extends V> future : futures) {
@@ -297,7 +297,7 @@ public final class MoreFutures
     public static <V> ListenableFuture<V> whenAnyCompleteCancelOthers(Iterable<? extends ListenableFuture<? extends V>> futures)
     {
         requireNonNull(futures, "futures is null");
-        checkArgument(!Streams.stream(futures).findAny().isPresent(), "futures is empty");
+        checkArgument(stream(futures).findAny().isPresent(), "futures is empty");
 
         // wait for the first task to unblock and then cancel all futures to free up resources
         ListenableFuture<V> anyComplete = whenAnyComplete(futures);
@@ -331,7 +331,7 @@ public final class MoreFutures
     public static <V> CompletableFuture<V> firstCompletedFuture(Iterable<? extends CompletionStage<? extends V>> futures, boolean propagateCancel)
     {
         requireNonNull(futures, "futures is null");
-        checkArgument(!Streams.stream(futures).findAny().isPresent(), "futures is empty");
+        checkArgument(stream(futures).findAny().isPresent(), "futures is empty");
 
         CompletableFuture<V> future = new CompletableFuture<>();
         for (CompletionStage<? extends V> stage : futures) {
