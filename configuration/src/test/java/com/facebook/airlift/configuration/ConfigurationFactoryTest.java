@@ -278,7 +278,7 @@ public class ConfigurationFactoryTest
             monitor.assertNumberOfErrors(2);
             monitor.assertNumberOfWarnings(0);
             monitor.assertMatchingErrorRecorded("Invalid configuration property int-value: must be less than or equal to 100", "BeanValidationClass");
-            monitor.assertMatchingErrorRecorded("Invalid configuration property string-value: may not be null", "BeanValidationClass");
+            monitor.assertMatchingErrorRecorded("Invalid configuration property string-value: must not be null", "BeanValidationClass");
         }
     }
 
@@ -297,7 +297,7 @@ public class ConfigurationFactoryTest
             monitor.assertNumberOfErrors(2);
             monitor.assertNumberOfWarnings(0);
             monitor.assertMatchingErrorRecorded("Invalid configuration property example.int-value: must be less than or equal to 100", "BeanValidationClass");
-            monitor.assertMatchingErrorRecorded("Invalid configuration property example.string-value: may not be null", "BeanValidationClass");
+            monitor.assertMatchingErrorRecorded("Invalid configuration property example.string-value: must not be null", "BeanValidationClass");
         }
     }
 
