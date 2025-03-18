@@ -221,14 +221,16 @@ public class JettyHttpClient
 
         // timeouts
         httpClient.setIdleTimeout(idleTimeoutMillis);
+        httpClient.setConnectBlocking(true);
         httpClient.setConnectTimeout(config.getConnectTimeout().toMillis());
         httpClient.setAddressResolutionTimeout(config.getConnectTimeout().toMillis());
+        httpClient.setDestinationIdleTimeout(idleTimeoutMillis);
 
         httpClient.setConnectBlocking(config.isConnectBlocking());
 
         HostAndPort socksProxy = config.getSocksProxy();
         if (socksProxy != null) {
-            httpClient.getProxyConfiguration().getProxies().add(new Socks4Proxy(socksProxy.getHost(), socksProxy.getPortOrDefault(1080)));
+            httpClient.getProxyConfiguration().addProxy(new Socks4Proxy(socksProxy.getHost(), socksProxy.getPortOrDefault(1080)));
         }
 
         httpClient.setByteBufferPool(new ArrayByteBufferPool.Tracking());
@@ -408,7 +410,7 @@ public class JettyHttpClient
             pool.setName("http-client-" + name);
             pool.setDaemon(true);
             pool.start();
-            pool.setStopTimeout(2000);
+            pool.setStopTimeout(100);
             pool.setDetailedDump(true);
             return pool;
         }

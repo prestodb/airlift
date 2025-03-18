@@ -10,6 +10,7 @@ import com.google.common.collect.ImmutableList;
 import io.airlift.units.Duration;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -143,7 +144,7 @@ public abstract class AbstractHttpClientTest
             SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
             sslContextFactory.setKeyStorePath(keystore);
             sslContextFactory.setKeyStorePassword("changeit");
-            SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "HTTP/2");
+            SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString());
 
             connector = new ServerConnector(server, sslConnectionFactory, new HttpConnectionFactory(httpConfiguration));
         }
@@ -699,7 +700,7 @@ public abstract class AbstractHttpClientTest
 
         response = executeRequest(request, createStatusResponseHandler());
         assertEquals(response.getStatusCode(), 302);
-        assertEquals(response.getHeader(LOCATION), baseURI.toASCIIString() + "/redirect");
+        assertEquals(response.getHeader(LOCATION), "/redirect");
         assertEquals(servlet.getRequestUri(), request.getUri());
     }
 
