@@ -72,6 +72,6 @@ public class TestH2EmbeddedDataSourceConfig
     @Test
     public void testValidations()
     {
-        assertFailsValidation(new H2EmbeddedDataSourceConfig(), "filename", "may not be null", NotNull.class);
+        assertFailsValidation(new H2EmbeddedDataSourceConfig(), "filename", "must not be null", NotNull.class);
     }
 }
