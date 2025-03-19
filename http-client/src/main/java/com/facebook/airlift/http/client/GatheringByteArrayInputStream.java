@@ -1,5 +1,6 @@
 package com.facebook.airlift.http.client;
 
+import com.facebook.airlift.concurrent.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 
 import java.io.InputStream;
@@ -13,6 +14,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Objects.checkFromToIndex;
 import static java.util.Objects.requireNonNull;
 
+@ThreadSafe
 public class GatheringByteArrayInputStream
         extends InputStream
 {

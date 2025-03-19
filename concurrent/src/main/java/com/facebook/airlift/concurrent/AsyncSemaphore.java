@@ -34,6 +34,7 @@ import static java.util.Objects.requireNonNull;
  * when a task has been completed. The submitter function NEEDS to be thread-safe and is recommended
  * to do the bulk of its work asynchronously.
  */
+@ThreadSafe
 public class AsyncSemaphore<T>
 {
     private final Queue<QueuedTask<T>> queuedTasks = new ConcurrentLinkedQueue<>();

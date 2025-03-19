@@ -1,5 +1,6 @@
 package com.facebook.airlift.http.client.jetty;
 
+import com.facebook.airlift.concurrent.ThreadSafe;
 import com.facebook.airlift.http.client.GatheringByteArrayInputStream;
 import com.facebook.airlift.http.client.ResponseTooLargeException;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
@@ -20,6 +21,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 
+@ThreadSafe
 class BufferingResponseListener
         implements Response.Listener
 {

@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
  * <li>Will not encounter starvation</li>
  * </ul>
  */
+@ThreadSafe
 public class BoundedExecutor
         implements Executor
 {

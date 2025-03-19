@@ -56,7 +56,6 @@
         <dependency>
             <groupId>com.facebook.airlift</groupId>
             <artifactId>concurrent</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <dependency>
