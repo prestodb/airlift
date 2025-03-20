@@ -1,5 +1,6 @@
 package com.facebook.airlift.stats;
 
+import com.facebook.airlift.concurrent.NotThreadSafe;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Ticker;
@@ -53,6 +54,7 @@ import static java.lang.String.format;
  * This class also supports exponential decay. The implementation is based on the ideas laid out
  * in http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.159.3978
  */
+@NotThreadSafe
 public class QuantileDigest
 {
     private static final int MAX_BITS = 64;

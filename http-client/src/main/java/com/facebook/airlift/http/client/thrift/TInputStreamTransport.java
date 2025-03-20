@@ -13,6 +13,7 @@
  */
 package com.facebook.airlift.http.client.thrift;
 
+import com.facebook.airlift.concurrent.NotThreadSafe;
 import com.facebook.drift.protocol.TTransport;
 import com.facebook.drift.protocol.TTransportException;
 
@@ -21,6 +22,7 @@ import java.io.InputStream;
 
 import static java.util.Objects.requireNonNull;
 
+@NotThreadSafe
 public class TInputStreamTransport
         implements TTransport
 {

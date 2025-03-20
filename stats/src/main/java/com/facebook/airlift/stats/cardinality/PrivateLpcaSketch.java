@@ -19,6 +19,8 @@ import io.airlift.slice.DynamicSliceOutput;
 import io.airlift.slice.SizeOf;
 import io.airlift.slice.Slice;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
@@ -34,6 +36,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  * epsilon-differentially private, where
  * epsilon = epsilonThreshold + epsilonRandomizedResponse.
  */
+@NotThreadSafe
 public class PrivateLpcaSketch
 {
     private byte[] bitmap;
