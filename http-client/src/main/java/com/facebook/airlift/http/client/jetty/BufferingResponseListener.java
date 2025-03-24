@@ -1,8 +1,8 @@
 package com.facebook.airlift.http.client.jetty;
 
-import com.facebook.airlift.concurrent.ThreadSafe;
 import com.facebook.airlift.http.client.GatheringByteArrayInputStream;
 import com.facebook.airlift.http.client.ResponseTooLargeException;
+import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.units.DataSize;
 import org.eclipse.jetty.client.Response;

@@ -13,9 +13,9 @@
  */
 package com.facebook.airlift.http.client.jetty;
 
-import com.facebook.airlift.concurrent.ThreadSafe;
 import com.facebook.airlift.log.Logger;
 import com.google.common.util.concurrent.RateLimiter;
+import com.google.errorprone.annotations.ThreadSafe;
 import org.eclipse.jetty.client.HttpClient;
 
 @ThreadSafe

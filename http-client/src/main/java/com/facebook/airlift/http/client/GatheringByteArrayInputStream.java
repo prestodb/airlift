@@ -1,6 +1,6 @@
 package com.facebook.airlift.http.client;
 
-import com.facebook.airlift.concurrent.ThreadSafe;
+import com.google.errorprone.annotations.ThreadSafe;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 
 import java.io.InputStream;
