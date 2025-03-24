@@ -12,12 +12,26 @@
     <url>https://github.com/prestodb/airlift</url>
 
     <parent>
-        <groupId>com.facebook.airlift</groupId>
+        <groupId>com.github.zacblanco.airbase</groupId>
         <artifactId>airbase</artifactId>
-        <version>105-SNAPSHOT</version>
+        <version>upstream-jetty-upgrade-jitpack-SNAPSHOT</version>
     </parent>
 
     <inceptionYear>2010</inceptionYear>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <properties>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
