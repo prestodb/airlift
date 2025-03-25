@@ -1,6 +1,5 @@
 package com.facebook.airlift.http.client.jetty;
 
-import org.eclipse.jetty.client.Request;
 import org.eclipse.jetty.io.Content;
 
 import java.nio.ByteBuffer;
@@ -12,7 +11,7 @@ import static java.lang.Math.min;
 import static java.util.Objects.requireNonNull;
 
 public class ChunkedBytesContentProvider
-        implements Request.Content
+        extends AbstractContentProvider
 {
     private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
     private static final int DEFAULT_BUFFER_SIZE = 4096;
@@ -20,6 +19,7 @@ public class ChunkedBytesContentProvider
     private final byte[] bytes;
     private final int bufferSize;
     private ChunkedIterator iterator;
+    String contentType;
 
     public ChunkedBytesContentProvider(byte[] bytes)
     {
@@ -42,6 +42,13 @@ public class ChunkedBytesContentProvider
         checkArgument(bufferSizeInBytes > 0, "bufferSizeInBytes must be greater than zero: %s", bufferSizeInBytes);
         this.bufferSize = bufferSizeInBytes;
         this.iterator = new ChunkedIterator(bytes, this.bufferSize);
+        this.contentType = requireNonNull(contentType, "contentType is null");
+    }
+
+    @Override
+    public String getContentType()
+    {
+        return contentType;
     }
 
     @Override
@@ -64,15 +71,10 @@ public class ChunkedBytesContentProvider
     }
 
     @Override
-    public void demand(Runnable runnable)
-    {
-        runnable.run();
-    }
-
-    @Override
     public void fail(Throwable throwable)
     {
-        // do nothing
+        super.fail(throwable);
+        iterator.forEachRemaining(chunk -> {});
     }
 
     @Override

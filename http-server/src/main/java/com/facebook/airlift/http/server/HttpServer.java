@@ -591,7 +591,6 @@ public class HttpServer
             server.setErrorHandler(null);
         }
         checkState(server.isStarted(), "server is not started");
-//        System.out.println(server.dump());
     }
 
     @PreDestroy

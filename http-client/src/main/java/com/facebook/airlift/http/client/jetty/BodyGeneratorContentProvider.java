@@ -2,8 +2,7 @@ package com.facebook.airlift.http.client.jetty;
 
 import com.facebook.airlift.http.client.BodyGenerator;
 import com.google.common.collect.AbstractIterator;
-import org.eclipse.jetty.client.Request;
-import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.io.Content.Chunk;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -20,7 +19,7 @@ import static com.google.common.base.Throwables.throwIfUnchecked;
 import static org.eclipse.jetty.io.Content.Chunk.EOF;
 
 class BodyGeneratorContentProvider
-        implements Request.Content
+        extends AbstractContentProvider
 {
     private static final ByteBuffer DONE = ByteBuffer.allocate(0);
     private static final ByteBuffer EXCEPTION = ByteBuffer.allocate(0);
@@ -37,20 +36,20 @@ class BodyGeneratorContentProvider
     }
 
     @Override
-    public Content.Chunk read()
+    public Chunk read()
     {
-        return iterator.hasNext() ? Content.Chunk.from(iterator.next(), !iterator.hasNext()) : EOF;
-    }
+        if (failed.get() != null) {
+            return Chunk.from(failed.get());
+        }
 
-    @Override
-    public void demand(Runnable runnable)
-    {
-        runnable.run();
+        return iterator.hasNext() ? Chunk.from(iterator.next(), !iterator.hasNext()) : EOF;
     }
 
     @Override
     public void fail(Throwable throwable)
     {
+        super.fail(throwable);
+        iterator.forEachRemaining(chunk -> {});
     }
 
     public Iterator<ByteBuffer> iterator()
@@ -59,10 +58,8 @@ class BodyGeneratorContentProvider
         final AtomicReference<Exception> exception = new AtomicReference<>();
 
         executor.execute(() -> {
-            BodyGeneratorOutputStream out = new BodyGeneratorOutputStream(chunks);
-            try {
+            try (BodyGeneratorOutputStream out = new BodyGeneratorOutputStream(chunks)) {
                 bodyGenerator.write(out);
-                out.close();
             }
             catch (Exception e) {
                 exception.set(e);
@@ -70,7 +67,7 @@ class BodyGeneratorContentProvider
             }
         });
 
-        return new AbstractIterator<ByteBuffer>()
+        return new AbstractIterator<>()
         {
             @Override
             protected ByteBuffer computeNext()

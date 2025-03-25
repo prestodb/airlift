@@ -59,6 +59,7 @@ import static com.google.common.io.MoreFiles.deleteRecursively;
 import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.createTempDirectory;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
@@ -85,7 +86,7 @@ public class TestHttpServerProvider
     public void setup()
             throws IOException
     {
-        tempDir = java.nio.file.Files.createTempDirectory("test-http-server-provider").toFile().getCanonicalFile(); // getCanonicalFile needed to get around Issue 365 (http://code.google.com/p/guava-libraries/issues/detail?id=365)
+        tempDir = createTempDirectory("test-http-server-provider").toFile().getCanonicalFile(); // getCanonicalFile needed to get around Issue 365 (http://code.google.com/p/guava-libraries/issues/detail?id=365)
         config = new HttpServerConfig()
                 .setHttpPort(0)
                 .setHttpsPort(0)

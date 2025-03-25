@@ -24,6 +24,7 @@ import com.google.common.collect.Lists;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Request.AuthenticationState;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -31,6 +32,8 @@ import java.util.Optional;
 import static com.facebook.airlift.event.client.EventField.EventFieldMapping.TIMESTAMP;
 import static com.facebook.airlift.http.server.TraceTokenFilter.TRACETOKEN_HEADER;
 import static java.lang.Math.max;
+import static org.eclipse.jetty.server.Request.getAuthenticationState;
+import static org.eclipse.jetty.server.Request.getRemoteAddr;
 
 @EventType("HttpRequest")
 public class HttpRequestEvent
@@ -47,7 +50,7 @@ public class HttpRequestEvent
             DoubleSummaryStats responseContentInterarrivalStats)
     {
         String user = null;
-        Request.AuthenticationState authenticationState = Request.getAuthenticationState(request);
+        AuthenticationState authenticationState = getAuthenticationState(request);
         if (authenticationState != null && authenticationState.getUserPrincipal() != null) {
             user = authenticationState.getUserPrincipal().getName();
         }
@@ -76,8 +79,8 @@ public class HttpRequestEvent
         long timeToLastByte = max(currentTimeInMillis - Request.getTimeStamp(request), 0);
 
         ImmutableList.Builder<String> builder = ImmutableList.builder();
-        if (Request.getRemoteAddr(request) != null) {
-            builder.add(Request.getRemoteAddr(request));
+        if (getRemoteAddr(request) != null) {
+            builder.add(getRemoteAddr(request));
         }
         Optional.ofNullable(request.getHeaders())
                 .ifPresent(headers ->
@@ -99,7 +102,7 @@ public class HttpRequestEvent
             }
         }
         if (clientAddress == null) {
-            clientAddress = Request.getRemoteAddr(request);
+            clientAddress = getRemoteAddr(request);
         }
 
         String requestUri = null;

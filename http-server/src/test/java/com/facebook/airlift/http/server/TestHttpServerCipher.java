@@ -86,7 +86,6 @@ public class TestHttpServerCipher
             server.start();
             URI httpsUri = httpServerInfo.getHttpsUri();
 
-            System.setProperty("javax.net.debug", "ssl:handshake");
             try (HttpClient httpClient = createClientIncludeCiphers(CIPHER_1)) {
                 httpClient.GET(httpsUri);
             }

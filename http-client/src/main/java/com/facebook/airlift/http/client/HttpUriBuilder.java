@@ -6,7 +6,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Streams;
 import com.google.common.net.HostAndPort;
 import com.google.common.primitives.Bytes;
 
@@ -19,6 +18,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static com.google.common.base.CharMatcher.ascii;
+import static com.google.common.collect.Streams.stream;
 import static java.lang.Character.forDigit;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
@@ -177,7 +177,7 @@ public class HttpUriBuilder
     {
         requireNonNull(name, "name is null");
 
-        if (Streams.stream(values).findAny().isEmpty()) {
+        if (stream(values).findAny().isEmpty()) {
             params.put(name, null);
         }
 

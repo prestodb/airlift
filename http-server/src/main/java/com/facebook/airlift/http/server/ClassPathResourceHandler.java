@@ -21,7 +21,6 @@ import com.google.common.net.HttpHeaders;
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpException;
-import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.MimeTypes;
 import org.eclipse.jetty.server.Handler;
@@ -40,6 +39,8 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import static org.eclipse.jetty.http.HttpHeader.CONTENT_TYPE;
+import static org.eclipse.jetty.server.Response.toRedirectURI;
 
 /**
  * Serves files from a given folder on the classpath through jetty.
@@ -100,7 +101,7 @@ public class ClassPathResourceHandler
 
         if (resourcePath.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_TEMPORARY_REDIRECT);
-            response.getHeaders().add(HttpHeaders.LOCATION, Response.toRedirectURI(request, baseUri + "/"));
+            response.getHeaders().add(HttpHeaders.LOCATION, toRedirectURI(request, baseUri + "/"));
             callback.succeeded();
             return true;
         }
@@ -129,7 +130,7 @@ public class ClassPathResourceHandler
             resourceStream = resource.openStream();
 
             String contentType = MIME_TYPES.getMimeByExtension(resource.toString());
-            response.getHeaders().add(HttpHeader.CONTENT_TYPE, contentType);
+            response.getHeaders().add(CONTENT_TYPE, contentType);
             extraHeaders.forEach((name, value) -> response.getHeaders().add(name, value));
             if (skipContent) {
                 callback.succeeded();

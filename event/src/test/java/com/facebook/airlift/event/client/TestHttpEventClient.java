@@ -24,6 +24,8 @@ import com.facebook.airlift.node.NodeInfo;
 import com.google.common.io.CharStreams;
 import io.airlift.units.Duration;
 import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -201,7 +203,7 @@ public class TestHttpEventClient
         }
 
         @Override
-        protected void doPost(jakarta.servlet.http.HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response)
+        protected void doPost(HttpServletRequest request, HttpServletResponse response)
                 throws IOException
         {
             lastPath = request.getPathInfo();

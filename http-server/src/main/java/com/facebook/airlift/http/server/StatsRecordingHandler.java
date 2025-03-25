@@ -20,9 +20,11 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
 
-import java.util.concurrent.TimeUnit;
-
 import static java.lang.Math.max;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.eclipse.jetty.server.Request.getContentBytesRead;
+import static org.eclipse.jetty.server.Request.getTimeStamp;
+import static org.eclipse.jetty.server.Response.getContentBytesWritten;
 
 public class StatsRecordingHandler
         implements RequestLog
@@ -37,7 +39,7 @@ public class StatsRecordingHandler
     @Override
     public void log(Request request, Response response)
     {
-        Duration requestTime = new Duration(max(0, System.currentTimeMillis() - Request.getTimeStamp(request)), TimeUnit.MILLISECONDS);
-        stats.record(Request.getContentBytesRead(request), Response.getContentBytesWritten(response), requestTime);
+        Duration requestTime = new Duration(max(0, System.currentTimeMillis() - getTimeStamp(request)), MILLISECONDS);
+        stats.record(getContentBytesRead(request), getContentBytesWritten(response), requestTime);
     }
 }
