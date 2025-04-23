@@ -182,7 +182,7 @@
             </dependency>
 
             <dependency>
-                <groupId>com.facebook.drift</groupId>
+                <groupId>com.facebook.airlift.drift</groupId>
                 <artifactId>drift-protocol</artifactId>
                 <version>${dep.drift.version}</version>
                 <exclusions>
@@ -198,7 +198,7 @@
             </dependency>
 
             <dependency>
-                <groupId>com.facebook.drift</groupId>
+                <groupId>com.facebook.airlift.drift</groupId>
                 <artifactId>drift-codec</artifactId>
                 <version>${dep.drift.version}</version>
                 <exclusions>
@@ -214,7 +214,7 @@
             </dependency>
 
             <dependency>
-                <groupId>com.facebook.drift</groupId>
+                <groupId>com.facebook.airlift.drift</groupId>
                 <artifactId>drift-api</artifactId>
                 <version>${dep.drift.version}</version>
                 <exclusions>
@@ -230,7 +230,7 @@
             </dependency>
 
             <dependency>
-                <groupId>com.facebook.drift</groupId>
+                <groupId>com.facebook.airlift.drift</groupId>
                 <artifactId>drift-transport-netty</artifactId>
                 <version>${dep.drift.version}</version>
                 <exclusions>
