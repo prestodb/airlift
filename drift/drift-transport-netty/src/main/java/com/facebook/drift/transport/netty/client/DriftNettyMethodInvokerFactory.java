@@ -45,6 +45,7 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class DriftNettyMethodInvokerFactory<I>
         implements MethodInvokerFactory<I>, Closeable
@@ -145,7 +146,7 @@ public class DriftNettyMethodInvokerFactory<I>
         finally {
             connectionPoolMaintenanceExecutor.shutdownNow();
             try {
-                group.shutdownGracefully().await();
+                group.shutdownGracefully(0, 1, SECONDS).await();
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
