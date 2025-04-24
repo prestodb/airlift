@@ -23,7 +23,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.io.OutputStreamWriter;
 import java.util.Map;
 
 import static com.facebook.airlift.configuration.ConfigurationLoader.loadProperties;
@@ -68,8 +68,9 @@ public class TestConfigurationLoader
             throws IOException
     {
         final File file = File.createTempFile("config", ".properties", tempDir);
-        try (PrintStream out = new PrintStream(new FileOutputStream(file))) {
-            out.print("test: foo");
+        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(file))) {
+            out.write("test: foo");
+            out.flush();
 
             System.setProperty("config", file.getAbsolutePath());
 
@@ -87,9 +88,10 @@ public class TestConfigurationLoader
             throws IOException
     {
         final File file = File.createTempFile("config", ".properties", tempDir);
-        try (PrintStream out = new PrintStream(new FileOutputStream(file))) {
-            out.println("key1: original");
-            out.println("key2: original");
+        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(file))) {
+            out.write("key1: original" + "\n");
+            out.write("key2: original" + "\n");
+            out.flush();
 
             System.setProperty("config", file.getAbsolutePath());
             System.setProperty("key1", "overridden");
