@@ -45,4 +45,7 @@ public class OptionalField
 
     @ThriftField(value = 6)
     public OptionalDouble primitiveOptionalDouble;
+
+    @ThriftField(value = 7)
+    public Optional<Point> optionalPoint;
 }

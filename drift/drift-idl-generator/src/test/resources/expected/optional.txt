@@ -1,3 +1,18 @@
+/**
+ * Two dimensional point.
+ */
+struct Point {
+  1: required i32 x;
+  2: required i32 y;
+
+  /**
+   * Info about the point
+   */
+  3: optional string comment;
+
+  4: optional i32 tag;
+}
+
 struct OptionalField {
   1: optional string optionalString;
   2: optional i64 optionalLong;
@@ -5,4 +20,5 @@ struct OptionalField {
   4: optional i32 primitiveOptionalInt;
   5: optional i64 primitiveOptionalLong;
   6: double primitiveOptionalDouble;
+  7: optional Point optionalPoint;
 }
