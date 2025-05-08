@@ -15,18 +15,25 @@
  */
 package com.facebook.drift.idl.generator;
 
+import com.facebook.drift.codec.metadata.ReflectionHelper;
+import com.facebook.drift.codec.metadata.ThriftCatalog;
 import com.facebook.drift.codec.metadata.ThriftType;
 import com.google.common.collect.ImmutableMap;
 
+import java.lang.reflect.Type;
 import java.util.Map;
+
+import static java.util.Objects.requireNonNull;
 
 public class ThriftTypeRenderer
 {
     private final Map<ThriftType, String> typeNames;
+    private final ThriftCatalog catalog;
 
-    public ThriftTypeRenderer(Map<ThriftType, String> typeNames)
+    public ThriftTypeRenderer(Map<ThriftType, String> typeNames, ThriftCatalog catalog)
     {
         this.typeNames = ImmutableMap.copyOf(typeNames);
+        this.catalog = requireNonNull(catalog, "catalog is null");
     }
 
     public String toString(ThriftType type)
@@ -53,8 +60,16 @@ public class ThriftTypeRenderer
             case LIST:
                 return String.format("list<%s>", toString(type.getValueTypeReference().get()));
             case STRUCT:
-                // VOID is encoded as a struct
-                return type.equals(ThriftType.VOID) ? "void" : prefix(type) + type.getStructMetadata().getStructName();
+                if (type.equals(ThriftType.VOID)) {
+                    // VOID is encoded as a struct
+                    return "void";
+                }
+                if (ReflectionHelper.isOptional(type.getJavaType())) {
+                    Type unwrappedJavaType = ReflectionHelper.getOptionalType(type.getJavaType());
+                    ThriftType thriftType = catalog.getThriftType(unwrappedJavaType);
+                    return toString(thriftType);
+                }
+                return prefix(type) + type.getStructMetadata().getStructName();
             case STRING:
                 return "string";
             case BINARY:

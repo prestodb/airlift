@@ -19,6 +19,9 @@ import com.facebook.drift.annotations.ThriftField;
 import com.facebook.drift.annotations.ThriftStruct;
 
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import static com.facebook.drift.annotations.ThriftField.Requiredness.OPTIONAL;
 
@@ -33,4 +36,16 @@ public class OptionalField
 
     @ThriftField(value = 3, requiredness = OPTIONAL)
     public Integer optionalInteger;
+
+    @ThriftField(value = 4, requiredness = OPTIONAL)
+    public OptionalInt primitiveOptionalInt;
+
+    @ThriftField(value = 5, requiredness = OPTIONAL)
+    public OptionalLong primitiveOptionalLong;
+
+    @ThriftField(value = 6)
+    public OptionalDouble primitiveOptionalDouble;
+
+    @ThriftField(value = 7)
+    public Optional<Point> optionalPoint;
 }
