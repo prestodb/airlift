@@ -432,11 +432,13 @@ def main():
         node_properties = load_properties(o.node_config)
 
     data_dir = node_properties.get('node.data-dir')
+    server_dir = node_properties.get('log.path')
     o.data_dir = realpath(options.data_dir or data_dir or o.install_path)
+    o.server_dir = realpath(getattr(options, 'server_dir', None) or server_dir or pathjoin(o.data_dir, 'var/log/server.log'))
 
     o.pid_file = realpath(options.pid_file or pathjoin(o.data_dir, 'var/run/launcher.pid'))
     o.launcher_log = realpath(options.launcher_log_file or pathjoin(o.data_dir, 'var/log/launcher.log'))
-    o.server_log = realpath(options.server_log_file or pathjoin(o.data_dir, 'var/log/server.log'))
+    o.server_log = realpath(o.server_dir or options.server_log_file or pathjoin(o.data_dir, 'var/log/server.log'))
 
     o.properties = parse_properties(parser, options.properties or {})
     for k, v in node_properties.items():
