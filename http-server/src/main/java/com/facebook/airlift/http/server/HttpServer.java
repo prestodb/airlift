@@ -52,6 +52,7 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
+import org.eclipse.jetty.util.ssl.KeyStoreScanner;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.Scheduler;
@@ -269,6 +270,11 @@ public class HttpServer
 
             Integer acceptors = config.getHttpsAcceptorThreads();
             Integer selectors = config.getHttpsSelectorThreads();
+
+            // Scan for keystore file changes every 1s (the default). Interval can be made configurable in the future
+            KeyStoreScanner keyStoreScanner = new KeyStoreScanner(sslContextFactory);
+            server.addBean(keyStoreScanner);
+
             httpsConnector = createServerConnector(
                     httpServerInfo.getHttpsChannel(),
                     server,
