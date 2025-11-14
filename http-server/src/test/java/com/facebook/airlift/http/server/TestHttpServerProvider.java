@@ -35,13 +35,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.concurrent.ExecutionException;
@@ -80,6 +83,12 @@ public class TestHttpServerProvider
     public void setupSuite()
     {
         Logging.initialize();
+    }
+
+    @DataProvider(name = "adminMode")
+    public static Object[][] adminMode()
+    {
+        return new Object[][] {{true}, {false}};
     }
 
     @BeforeMethod
@@ -310,16 +319,24 @@ public class TestHttpServerProvider
         }
     }
 
-    @Test
-    public void testClientCertificateJava()
+    @Test(dataProvider = "adminMode")
+    public void testClientCertificateJava(boolean adminMode)
             throws Exception
     {
+        tempDir = createTempDirectory("test-keystore").toFile().getCanonicalFile();
+        String tempKeyStorePath = tempDir.toPath().resolve("server.keystore").toAbsolutePath().toString();
+        String originalKeyStorePath = getResource("clientcert-java/server.keystore").getPath();
+        String replacementKeyStorePath = getResource("clientcert-java/replacementServer.keystore").getPath();
+
+        Files.copy(Path.of(originalKeyStorePath), Path.of(tempKeyStorePath), StandardCopyOption.REPLACE_EXISTING);
+
         config.setHttpEnabled(false)
-                .setAdminEnabled(false)
+                .setAdminEnabled(adminMode)
                 .setHttpsEnabled(true)
                 .setHttpsPort(0)
-                .setKeystorePath(getResource("clientcert-java/server.keystore").getPath())
-                .setKeystorePassword("airlift");
+                .setKeystorePath(tempKeyStorePath)
+                .setKeystorePassword("airlift")
+                .setKeystoreScanInterval(1);
 
         createAndStartServer(createCertTestServlet());
 
@@ -336,6 +353,26 @@ public class TestHttpServerProvider
 
             assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
             assertEquals(response.getBody(), "CN=testing,OU=Client,O=Airlift,L=Palo Alto,ST=CA,C=US");
+        }
+
+        Files.copy(Path.of(replacementKeyStorePath), Path.of(tempKeyStorePath), StandardCopyOption.REPLACE_EXISTING);
+
+        // Wait for the KeyStoreScanner to detect the file change. Scan interval is 1 second, so sleeping for 2.5 seconds
+        Thread.sleep(2500);
+
+        HttpClientConfig clientConfig2 = new HttpClientConfig()
+                .setKeyStorePath(getResource("clientcert-java/replacementClient.keystore").getPath())
+                .setKeyStorePassword("airlift")
+                .setTrustStorePath(getResource("clientcert-java/replacementClient.truststore").getPath())
+                .setTrustStorePassword("airlift");
+
+        try (JettyHttpClient httpClient = new JettyHttpClient(clientConfig2)) {
+            StringResponse response = httpClient.execute(
+                    prepareGet().setUri(httpServerInfo.getHttpsUri()).build(),
+                    createStringResponseHandler());
+
+            assertEquals(response.getStatusCode(), HttpServletResponse.SC_OK);
+            assertEquals(response.getBody(), "CN=testing,OU=Client,O=Replacement,L=Palo Alto,ST=CA,C=US");
         }
     }
 
