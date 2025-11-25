@@ -156,6 +156,9 @@ public class TestHttpServerModule
             assertNull(httpServerInfo.getHttpsUri());
         }
         catch (Exception e) {
+            // Do nothing
+        }
+        finally {
             server.stop();
         }
     }
