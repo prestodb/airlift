@@ -22,7 +22,7 @@ import com.facebook.airlift.http.client.HttpClientConfig;
 import com.facebook.airlift.http.client.HttpStatus;
 import com.facebook.airlift.http.client.HttpUriBuilder;
 import com.facebook.airlift.http.client.StatusResponseHandler.StatusResponse;
-import com.facebook.airlift.http.client.StringResponseHandler;
+import com.facebook.airlift.http.client.StringResponseHandler.StringResponse;
 import com.facebook.airlift.http.client.jetty.JettyHttpClient;
 import com.facebook.airlift.http.server.HttpServerConfig;
 import com.facebook.airlift.http.server.HttpServerInfo;
@@ -62,6 +62,7 @@ import static com.facebook.airlift.http.client.Request.Builder.prepareGet;
 import static com.facebook.airlift.http.client.StatusResponseHandler.createStatusResponseHandler;
 import static com.facebook.airlift.http.client.StringResponseHandler.createStringResponseHandler;
 import static com.facebook.airlift.http.server.HttpServerBinder.httpServerBinder;
+import static com.facebook.airlift.http.server.RetryHelper.executeWithRetry;
 import static com.facebook.airlift.testing.Assertions.assertGreaterThan;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
@@ -258,7 +259,7 @@ public class TestTestingHttpServer
     private static void assertResource(URI baseUri, HttpClient client, String path, String contents)
     {
         HttpUriBuilder uriBuilder = uriBuilderFrom(baseUri);
-        StringResponseHandler.StringResponse data = client.execute(prepareGet().setUri(uriBuilder.appendPath(path).build()).build(), createStringResponseHandler());
+        StringResponse data = executeWithRetry(client, prepareGet().setUri(uriBuilder.appendPath(path).build()).build(), createStringResponseHandler());
         assertEquals(data.getStatusCode(), HttpStatus.OK.code());
         MediaType contentType = MediaType.parse(data.getHeader(HttpHeaders.CONTENT_TYPE));
         assertTrue(PLAIN_TEXT_UTF_8.is(contentType), "Expected text/plain but got " + contentType);

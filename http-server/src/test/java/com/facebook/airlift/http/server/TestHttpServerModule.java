@@ -64,6 +64,7 @@ import static com.facebook.airlift.http.client.StaticBodyGenerator.createStaticB
 import static com.facebook.airlift.http.client.StatusResponseHandler.createStatusResponseHandler;
 import static com.facebook.airlift.http.client.StringResponseHandler.createStringResponseHandler;
 import static com.facebook.airlift.http.server.HttpServerBinder.httpServerBinder;
+import static com.facebook.airlift.http.server.RetryHelper.executeWithRetry;
 import static com.google.common.io.MoreFiles.deleteRecursively;
 import static com.google.common.io.RecursiveDeleteOption.ALLOW_INSECURE;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
@@ -228,7 +229,7 @@ public class TestHttpServerModule
     private void assertResource(URI baseUri, HttpClient client, String path, String contents, Map<String, String> hasHeaders)
     {
         HttpUriBuilder uriBuilder = uriBuilderFrom(baseUri);
-        StringResponse response = client.execute(prepareGet().setUri(uriBuilder.appendPath(path).build()).build(), createStringResponseHandler());
+        StringResponse response = executeWithRetry(client, prepareGet().setUri(uriBuilder.appendPath(path).build()).build(), createStringResponseHandler());
         assertEquals(response.getStatusCode(), HttpStatus.OK.code());
         String contentType = response.getHeader(CONTENT_TYPE);
         assertNotNull(contentType, CONTENT_TYPE + " header is absent");
@@ -244,12 +245,7 @@ public class TestHttpServerModule
     private void assertRedirect(URI baseUri, HttpClient client, String path, String redirect)
     {
         HttpUriBuilder uriBuilder = uriBuilderFrom(baseUri);
-        StringResponse response = client.execute(
-                prepareGet()
-                        .setFollowRedirects(false)
-                        .setUri(uriBuilder.appendPath(path).build())
-                        .build(),
-                createStringResponseHandler());
+        StringResponse response = executeWithRetry(client, prepareGet().setFollowRedirects(false).setUri(uriBuilder.appendPath(path).build()).build(), createStringResponseHandler());
         assertEquals(response.getStatusCode(), HttpStatus.TEMPORARY_REDIRECT.code());
         assertEquals(response.getHeader(LOCATION), redirect);
         assertNull(response.getHeader(CONTENT_TYPE), CONTENT_TYPE + " header should be absent");
