@@ -16,6 +16,44 @@
         <project.build.targetJdk>17</project.build.targetJdk>
     </properties>
 
+    <profiles>
+        <profile>
+            <id>ci</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>default-test</id>
+                                <configuration>
+                                    <excludes>
+                                        <exclude>**/TestTestingHttpServer.java</exclude>
+                                        <exclude>**/TestHttpServerModule.java</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>sequential-tests</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <includes>
+                                        <include>**/TestTestingHttpServer.java</include>
+                                        <include>**/TestHttpServerModule.java</include>
+                                    </includes>
+                                    <parallel>none</parallel>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>com.facebook.airlift</groupId>

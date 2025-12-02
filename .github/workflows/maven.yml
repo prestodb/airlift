@@ -19,7 +19,7 @@ jobs:
           - 17
     steps:
     - uses: actions/checkout@v4
-      with: 
+      with:
         show-progress: false
         # needed for the git-commit-id-plugin to work
         fetch-depth: 0
@@ -30,4 +30,12 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Maven install
-      run: mvn install
+      run: |
+        mvn install -B -V --quiet -T 1C -DskipTests
+    - name: Maven http-server tests
+      run: |
+          mvn test -P 'ci' -pl 'http-server'
+    - name: Maven non http-server tests
+      run: |
+        mvn test -T 1C -pl '!http-server'
+
