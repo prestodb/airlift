@@ -17,6 +17,17 @@ jobs:
       matrix:
         java-version:
           - 17
+    env:
+      MAVEN_OPTS: >
+        -Dorg.eclipse.jetty.LEVEL=DEBUG
+        -Dorg.eclipse.jetty.http.LEVEL=DEBUG
+        -Dorg.eclipse.jetty.io.LEVEL=DEBUG
+        -Dorg.eclipse.jetty.client.LEVEL=DEBUG
+        -Dorg.eclipse.jetty.util.LEVEL=DEBUG
+        -Dcom.facebook.airlift.LEVEL=DEBUG
+        -Dcom.facebook.airlift.http.client.jetty.LEVEL=DEBUG
+        -Dcom.facebook.airlift.http.server.LEVEL=DEBUG
+        -Dorg.eclipse.jetty.dumpAfterStart=true
     steps:
     - uses: actions/checkout@v4
       with: 
