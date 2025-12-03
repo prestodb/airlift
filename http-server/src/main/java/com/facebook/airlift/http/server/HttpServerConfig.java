@@ -136,6 +136,8 @@ public class HttpServerConfig
     private Set<String> defaultAllowedRoles = ImmutableSet.of();
     private boolean allowUnsecureRequestsInAuthorizer;
 
+    private int keyStoreScanIntervalSeconds;
+
     public boolean isHttpEnabled()
     {
         return httpEnabled;
@@ -822,5 +824,18 @@ public class HttpServerConfig
     public List<HttpComplianceViolation> getHttpComplianceViolations()
     {
         return httpComplianceViolations;
+    }
+
+    @Config("http-server.https.keystore.scan-interval-seconds")
+    @ConfigDescription("Interval (in seconds) at which the server checks for updates to the HTTPS keystore file")
+    public HttpServerConfig setKeystoreScanInterval(int keyStoreScanIntervalSeconds)
+    {
+        this.keyStoreScanIntervalSeconds = keyStoreScanIntervalSeconds;
+        return this;
+    }
+
+    public int getKeystoreScanInterval()
+    {
+        return keyStoreScanIntervalSeconds;
     }
 }
