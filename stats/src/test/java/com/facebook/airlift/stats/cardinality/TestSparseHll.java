@@ -28,7 +28,7 @@ import static org.testng.Assert.assertEquals;
 
 public class TestSparseHll
 {
-    private static final int SPARSE_HLL_INSTANCE_SIZE = ClassLayout.parseClass(SparseHll.class).instanceSize();
+    private static final long SPARSE_HLL_INSTANCE_SIZE = ClassLayout.parseClass(SparseHll.class).instanceSize();
 
     @Test(dataProvider = "bits")
     public void testNumberOfZeros(int indexBitLength)

@@ -58,7 +58,7 @@ import static java.lang.String.format;
 public class QuantileDigest
 {
     private static final int MAX_BITS = 64;
-    private static final int QUANTILE_DIGEST_SIZE = ClassLayout.parseClass(QuantileDigest.class).instanceSize();
+    private static final long QUANTILE_DIGEST_SIZE = ClassLayout.parseClass(QuantileDigest.class).instanceSize();
 
     // needs to be such that Math.exp(alpha * seconds) does not grow too big
     static final long RESCALE_THRESHOLD_SECONDS = 50;

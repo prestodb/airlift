@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class HyperLogLog
 {
-    private static final int INSTANCE_SIZE = ClassLayout.parseClass(HyperLogLog.class).instanceSize();
+    private static final long INSTANCE_SIZE = ClassLayout.parseClass(HyperLogLog.class).instanceSize();
     private static final int MAX_NUMBER_OF_BUCKETS = 65536;
     private HllInstance instance;
 
@@ -106,7 +106,7 @@ public class HyperLogLog
         instance.eachBucket(listener);
     }
 
-    public int estimatedInMemorySize()
+    public long estimatedInMemorySize()
     {
         return instance.estimatedInMemorySize() + INSTANCE_SIZE;
     }
