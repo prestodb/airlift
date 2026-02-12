@@ -46,7 +46,7 @@ final class DenseHll
     private static final int MAX_DELTA = (1 << BITS_PER_BUCKET) - 1;
     private static final int BUCKET_MASK = (1 << BITS_PER_BUCKET) - 1;
 
-    private static final int DENSE_INSTANCE_SIZE = ClassLayout.parseClass(DenseHll.class).instanceSize();
+    private static final long DENSE_INSTANCE_SIZE = ClassLayout.parseClass(DenseHll.class).instanceSize();
     private static final int OVERFLOW_GROW_INCREMENT = 5;
 
     private final byte indexBitLength;
@@ -148,9 +148,9 @@ final class DenseHll
     }
 
     @Override
-    public int estimatedInMemorySize()
+    public long estimatedInMemorySize()
     {
-        return (int) (DENSE_INSTANCE_SIZE +
+        return (DENSE_INSTANCE_SIZE +
                 SizeOf.sizeOf(deltas) +
                 SizeOf.sizeOf(overflowBuckets) +
                 SizeOf.sizeOf(overflowValues));
