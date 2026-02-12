@@ -73,8 +73,10 @@ public class HttpServerChannelListener
         if (request.getAttribute(RESPONSE_CONTENT_SIZES_ATTRIBUTE) == null) {
             request.setAttribute(RESPONSE_CONTENT_SIZES_ATTRIBUTE, new AtomicLong(0L));
         }
-        AtomicLong responseSize = (AtomicLong) request.getAttribute(RESPONSE_CONTENT_SIZES_ATTRIBUTE);
-        responseSize.addAndGet(content.remaining());
+        if (content != null) {
+            AtomicLong responseSize = (AtomicLong) request.getAttribute(RESPONSE_CONTENT_SIZES_ATTRIBUTE);
+            responseSize.addAndGet((long) content.remaining());
+        }
     }
 
     @Override
