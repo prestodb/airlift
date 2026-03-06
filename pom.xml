@@ -5,7 +5,7 @@
     <groupId>com.facebook.airlift</groupId>
     <artifactId>airlift</artifactId>
     <packaging>pom</packaging>
-    <version>0.229-SNAPSHOT</version>
+    <version>0.229-SNAPSHOT-test</version>
 
     <name>airlift</name>
     <description>Airlift</description>
