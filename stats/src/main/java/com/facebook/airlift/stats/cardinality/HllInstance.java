@@ -26,7 +26,7 @@ interface HllInstance
 
     int getIndexBitLength();
 
-    long estimatedInMemorySize();
+    int estimatedInMemorySize();
 
     int estimatedSerializedSize();
 
