@@ -434,6 +434,31 @@ public class TestQuantileDigest
     }
 
     @Test
+    public void testDecayedQuantilesWithNoMergeOrAdd()
+            throws Exception
+    {
+        TestingTicker ticker = new TestingTicker();
+        QuantileDigest digest = new QuantileDigest(0.01, ExponentialDecay.computeAlpha(0.5, 60), ticker);
+
+        addAll(digest, asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+
+        assertEquals(digest.getConfidenceFactor(), 0.0);
+        assertEquals(digest.getQuantile(0.5), 5);
+
+        // Decay the digest
+        ticker.increment(60, TimeUnit.SECONDS);
+        assertEquals(digest.getQuantile(0.5), 5);
+
+        // Allow further decay
+        ticker.increment(6, TimeUnit.MINUTES);
+        assertEquals(digest.getQuantile(0.5), 5);
+
+        // Values have decayed to 0
+        ticker.increment(60, TimeUnit.MINUTES);
+        assertEquals(digest.getQuantile(0.5), Long.MIN_VALUE); // Default value for empty digests
+    }
+
+    @Test
     public void testMinMax()
             throws Exception
     {
