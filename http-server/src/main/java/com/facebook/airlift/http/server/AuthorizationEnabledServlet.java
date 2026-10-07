@@ -76,8 +76,12 @@ public class AuthorizationEnabledServlet
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        // skip authorization if non-secure
+        // skip authorization if non-secure, but still serve the request by
+        // invoking the delegate. Returning here without delegating would leave
+        // the response empty (an unintended empty 200), effectively dropping
+        // every unsecured request to a wrapped servlet.
         if (!request.isSecure() && allowUnsecureRequestsInAuthorizer) {
+            delegate.service(req, res);
             return;
         }
 
