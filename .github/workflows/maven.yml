@@ -30,4 +30,4 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Maven install
-      run: mvn install
+      run: ./mvnw install
