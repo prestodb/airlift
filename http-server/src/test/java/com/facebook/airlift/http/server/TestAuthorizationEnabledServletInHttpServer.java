@@ -57,6 +57,8 @@ import java.util.Set;
 import static com.facebook.airlift.configuration.ConditionalModule.installModuleIf;
 import static com.facebook.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static com.facebook.airlift.http.client.StatusResponseHandler.createStatusResponseHandler;
+import static com.facebook.airlift.http.client.StringResponseHandler.StringResponse;
+import static com.facebook.airlift.http.client.StringResponseHandler.createStringResponseHandler;
 import static com.facebook.airlift.http.server.AuthorizationResult.failure;
 import static com.facebook.airlift.http.server.AuthorizationResult.success;
 import static com.facebook.airlift.testing.Closeables.closeQuietly;
@@ -66,6 +68,8 @@ import static org.testng.Assert.assertEquals;
 
 public class TestAuthorizationEnabledServletInHttpServer
 {
+    private static final String DELEGATE_RESPONSE_BODY = "served-by-delegate";
+
     private HttpClient client;
 
     @BeforeClass
@@ -178,16 +182,27 @@ public class TestAuthorizationEnabledServletInHttpServer
                 .build();
         TestingHttpServer server = createServer(serverProperties);
         server.start();
-        assertEquals(sendRequest(server, "unmarked").getStatusCode(), Response.Status.OK.getStatusCode());
-        assertEquals(sendRequest(server, "user").getStatusCode(), Response.Status.OK.getStatusCode());
-        assertEquals(sendRequest(server, "admin").getStatusCode(), Response.Status.OK.getStatusCode());
-        assertEquals(sendRequestWithRole(server, "unmarked", "user").getStatusCode(), Response.Status.OK.getStatusCode());
-        assertEquals(sendRequestWithRole(server, "user", "user").getStatusCode(), Response.Status.OK.getStatusCode());
-        assertEquals(sendRequestWithRole(server, "admin", "user").getStatusCode(), Response.Status.OK.getStatusCode());
-        assertEquals(sendRequestWithRole(server, "unmarked", "admin").getStatusCode(), Response.Status.OK.getStatusCode());
-        assertEquals(sendRequestWithRole(server, "user", "admin").getStatusCode(), Response.Status.OK.getStatusCode());
-        assertEquals(sendRequestWithRole(server, "admin", "admin").getStatusCode(), Response.Status.OK.getStatusCode());
+        // When authorization is skipped for unsecured requests the delegate
+        // servlet must still run and produce its response body. Asserting only
+        // the status code is not enough: a wrapper that returns without
+        // delegating yields an empty 200 that still looks OK. Verify the body
+        // to prove the delegate was actually invoked.
+        assertServedByDelegate(sendRequestForBody(server, "unmarked"));
+        assertServedByDelegate(sendRequestForBody(server, "user"));
+        assertServedByDelegate(sendRequestForBody(server, "admin"));
+        assertServedByDelegate(sendRequestForBodyWithRole(server, "unmarked", "user"));
+        assertServedByDelegate(sendRequestForBodyWithRole(server, "user", "user"));
+        assertServedByDelegate(sendRequestForBodyWithRole(server, "admin", "user"));
+        assertServedByDelegate(sendRequestForBodyWithRole(server, "unmarked", "admin"));
+        assertServedByDelegate(sendRequestForBodyWithRole(server, "user", "admin"));
+        assertServedByDelegate(sendRequestForBodyWithRole(server, "admin", "admin"));
         server.stop();
+    }
+
+    private static void assertServedByDelegate(StringResponse response)
+    {
+        assertEquals(response.getStatusCode(), Response.Status.OK.getStatusCode());
+        assertEquals(response.getBody(), DELEGATE_RESPONSE_BODY);
     }
 
     private StatusResponse sendRequest(TestingHttpServer server, String resource)
@@ -202,6 +217,20 @@ public class TestAuthorizationEnabledServletInHttpServer
         URI uri = uriBuilderFrom(server.getBaseUrl()).appendPath(resource).build();
         Request request = Request.Builder.prepareGet().setUri(uri).setHeader("ROLE", role).build();
         return client.execute(request, createStatusResponseHandler());
+    }
+
+    private StringResponse sendRequestForBody(TestingHttpServer server, String resource)
+    {
+        URI uri = uriBuilderFrom(server.getBaseUrl()).appendPath(resource).build();
+        Request request = Request.Builder.prepareGet().setUri(uri).build();
+        return client.execute(request, createStringResponseHandler());
+    }
+
+    private StringResponse sendRequestForBodyWithRole(TestingHttpServer server, String resource, String role)
+    {
+        URI uri = uriBuilderFrom(server.getBaseUrl()).appendPath(resource).build();
+        Request request = Request.Builder.prepareGet().setUri(uri).setHeader("ROLE", role).build();
+        return client.execute(request, createStringResponseHandler());
     }
 
     private static class MockAuthorizer
@@ -259,8 +288,10 @@ public class TestAuthorizationEnabledServletInHttpServer
     {
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response)
+                throws IOException
         {
             response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write(DELEGATE_RESPONSE_BODY);
         }
     }
 
@@ -270,8 +301,10 @@ public class TestAuthorizationEnabledServletInHttpServer
     {
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response)
+                throws IOException
         {
             response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write(DELEGATE_RESPONSE_BODY);
         }
     }
 
@@ -281,8 +314,10 @@ public class TestAuthorizationEnabledServletInHttpServer
     {
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response)
+                throws IOException
         {
             response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().write(DELEGATE_RESPONSE_BODY);
         }
     }
 
